@@ -5,7 +5,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "comment": "SPA fallback. /api is deliberately excluded so calls to a missing backend return an honest 404 instead of index.html with a 200, which would surface as a JSON parse error.",
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
