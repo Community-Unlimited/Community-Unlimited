@@ -3,9 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "types": "dist/types/components/ui.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ds": "npm run build && npm run build:types && cp dist/assets/index-*.css dist/ds.css",
+    "build:types": "tsc -p tsconfig.app.json --declaration --emitDeclarationOnly --noEmit false --rootDir src --outDir dist/types",
     "lint": "oxlint",
     "preview": "vite preview"
   },

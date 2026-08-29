@@ -1,0 +1,27 @@
+{
+  "projectId": "b3c9f19e-f5b4-432d-b81d-ebb3b212620e",
+  "shape": "package",
+  "pkg": "frontend",
+  "globalName": "CUOS",
+  "buildCmd": "npm run build:ds",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.app.json",
+  "cssEntry": "dist/ds.css",
+  "extraFonts": [
+    "public/fonts/Inter-Variable.woff2",
+    "public/fonts/DMSerifDisplay-Regular.woff2"
+  ],
+  "componentSrcMap": {
+    "Banner": "src/components/ui.tsx",
+    "Button": "src/components/ui.tsx",
+    "Card": "src/components/ui.tsx",
+    "Field": "src/components/ui.tsx",
+    "Meter": "src/components/ui.tsx",
+    "SectionTitle": "src/components/ui.tsx",
+    "SeverityBadge": "src/components/ui.tsx",
+    "Spinner": "src/components/ui.tsx",
+    "StatTile": "src/components/ui.tsx",
+    "TierPills": "src/components/ui.tsx"
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

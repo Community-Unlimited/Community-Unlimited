@@ -70,6 +70,19 @@
   --radius-cu-lg: 1rem;
 }
 
+/* Tailwind emits utilities on demand, so a class the app never happens to use
+   is absent from the compiled stylesheet. That is fine for the app and wrong
+   for the design system: Claude Design renders static CSS with no Tailwind
+   compiler, so a design can only use classes that already exist here. Without
+   this safelist the brand surface silently shrinks to whatever the app used
+   (measured: 18 of 23 colour tokens, so `bg-cu-emerald` would not resolve).
+   Cost is a few KB; the alternative is an agent writing classes that do
+   nothing. */
+@source inline("{bg,text,border}-cu-{teal,teal-ink,teal-mid,teal-tint,teal-tint-strong,teal-edge,orange,orange-ink,orange-tint,emerald,ink,body-text,muted,line,line-soft,page,surface,green,green-tint,amber,amber-tint,red,red-tint}");
+@source inline("text-cu-{h1,h2,h3,body,caption}");
+@source inline("rounded-cu{,-lg}");
+@source inline("font-{sans,display}");
+
 /* Inter and DM Serif Display are self-hosted in /public/fonts so the app has
    no external font dependency and works offline. Falls back to system sans
    if the files are absent. */
