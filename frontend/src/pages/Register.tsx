@@ -91,12 +91,12 @@ export default function Register() {
     return (
       <div className="mx-auto max-w-xl">
         <Card>
-          <h1 className="font-display text-cu-h1 leading-tight text-cu-ink">
+          <h1 className="text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
             {done.already_registered ? "You're already with us" : "Thank you"}
           </h1>
-          <p className="mt-3 text-cu-body text-cu-body-text">{done.message}</p>
+          <p className="mt-3 text-[1.0625rem] text-cu-body-text">{done.message}</p>
           {done.tier && (
-            <p className="mt-4 rounded-cu bg-cu-teal-tint p-4 text-cu-body text-cu-ink">
+            <p className="mt-4 rounded-xl bg-cu-teal-tint p-4 text-cu-body text-cu-ink">
               Your next step is <strong>{done.tier.next_module ?? "to be confirmed"}</strong>.
               We'll message you on WhatsApp when a session opens.
             </p>
@@ -123,10 +123,10 @@ export default function Register() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="font-display text-cu-h1 leading-tight text-cu-ink">
+      <h1 className="text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
         Join Community Unlimited
       </h1>
-      <p className="mt-2 text-cu-body text-cu-body-text">
+      <p className="mt-2 text-[1.0625rem] text-cu-body-text">
         Age is not the limit. Disconnection is. Tell us how to reach you and
         what you'd enjoy — that's all we need to start.
       </p>

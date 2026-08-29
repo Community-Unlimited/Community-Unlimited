@@ -25,6 +25,33 @@ const NAV = [
   { to: "/events", label: "Events & Academy" },
 ];
 
+/**
+ * The CU lockup, for use on the emerald header and sign-in chip.
+ *
+ * Typographic rather than the bitmap mark: the `logo-cu.png` shipped in the
+ * design project is malformed — its IDAT chunk declares 14,086 bytes but only
+ * 13,916 are present, so browsers draw roughly the top 95% and stop. It is also
+ * dark artwork, which would need inverting to read on emerald at all. Drop a
+ * clean, light-on-transparent asset at `public/logo-cu.png` and swap the
+ * wordmark below for an <img>.
+ */
+export function Brand({ size = 38 }: { size?: number }) {
+  return (
+    <span className="flex flex-none items-baseline gap-2.5" style={{ height: size }}>
+      <span className="self-center text-[1.0625rem] font-bold leading-none tracking-[-0.01em] text-white">
+        Community<span className="text-cu-teal">Unlimited</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="self-center h-4 w-px bg-cu-teal-edge/40"
+      />
+      <span className="self-center text-cu-caption font-bold uppercase tracking-[0.14em] text-cu-teal">
+        CU-OS
+      </span>
+    </span>
+  );
+}
+
 function Shell({
   children,
   onSignOut,
@@ -34,22 +61,20 @@ function Shell({
 }) {
   const { pathname } = useLocation();
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-cu-sage">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-cu focus:bg-cu-teal-ink focus:px-4 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-cu-teal-ink focus:px-4 focus:py-2 focus:text-white"
       >
         Skip to content
       </a>
-      <header className="border-b border-cu-line bg-cu-surface">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span
-              aria-hidden="true"
-              className="inline-block h-6 w-6 rounded-full bg-cu-teal"
-            />
-            <span className="font-display text-cu-h3 text-cu-teal-ink">CU-OS</span>
+
+      <header className="sticky top-0 z-20 bg-cu-emerald">
+        <div className="mx-auto flex min-h-[68px] max-w-[1760px] flex-wrap items-center gap-x-5 gap-y-3 px-4 py-2.5 sm:px-8 lg:px-11">
+          <Link to="/" aria-label="Command Centre">
+            <Brand />
           </Link>
+
           <nav aria-label="Main" className="flex flex-wrap gap-1">
             {NAV.map((item) => {
               const active = pathname === item.to;
@@ -58,10 +83,10 @@ function Shell({
                   key={item.to}
                   to={item.to}
                   aria-current={active ? "page" : undefined}
-                  className={`tap-target inline-flex items-center rounded-cu px-4 py-2 text-cu-body font-medium ${
+                  className={`tap-target inline-flex items-center rounded-xl px-4 text-cu-body ${
                     active
-                      ? "bg-cu-teal-tint text-cu-teal-ink"
-                      : "text-cu-body-text hover:bg-cu-line-soft"
+                      ? "bg-cu-teal-edge/20 font-bold text-white shadow-[inset_0_-3px_0_var(--color-cu-teal)]"
+                      : "font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -69,29 +94,34 @@ function Shell({
               );
             })}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
+
+          <div className="ml-auto flex items-center gap-3">
             <Link
               to="/register"
-              className="tap-target inline-flex items-center rounded-cu px-4 py-2 text-cu-body font-medium text-cu-teal-ink hover:bg-cu-teal-tint"
+              className="tap-target inline-flex items-center rounded-xl border-[1.5px] border-cu-teal-edge/45 px-4 text-cu-body font-semibold text-cu-teal-edge hover:border-cu-teal-ink hover:bg-cu-teal-tint hover:text-cu-teal-ink"
             >
               Registration form
             </Link>
+            <span
+              aria-hidden="true"
+              className="h-7 w-px bg-cu-teal-edge/30"
+            />
             <button
               onClick={onSignOut}
-              className="tap-target rounded-cu px-4 py-2 text-cu-body font-medium text-cu-body-text hover:bg-cu-line-soft"
+              className="tap-target rounded-xl px-3.5 text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
             >
               Sign out
             </button>
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-7xl px-4 py-8">
+
+      <main
+        id="main"
+        className="mx-auto flex max-w-[1760px] flex-col gap-7 px-4 pb-16 pt-6 sm:px-8 sm:pt-9 lg:px-11"
+      >
         {children}
       </main>
-      <footer className="mx-auto max-w-7xl px-4 pb-10 text-cu-caption text-cu-muted">
-        Community Unlimited remains the connector. The human community remains
-        in charge.
-      </footer>
     </div>
   );
 }
@@ -108,13 +138,15 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Public - no sign-in, this is what a resident sees. */}
+          {/* Public — no sign-in. This is what a resident sees. */}
           <Route
             path="/register"
             element={
-              <main className="mx-auto max-w-7xl px-4 py-10">
-                <Register />
-              </main>
+              <div className="min-h-screen bg-cu-sage">
+                <main className="mx-auto max-w-[1760px] px-4 py-10 sm:px-8">
+                  <Register />
+                </main>
+              </div>
             }
           />
           <Route

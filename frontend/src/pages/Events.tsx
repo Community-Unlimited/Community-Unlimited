@@ -1,9 +1,9 @@
 /**
- * Admin event scheduling.
+ * Events & Academy.
  *
- * Covers both kinds the operation needs: CB module sessions on the locked
- * calendar, and general community events. Both invite and collect
- * acknowledgment over WhatsApp through the same flow.
+ * Covers both kinds of scheduling the operation needs: CB module sessions on
+ * the locked calendar, and general community events. Both invite and collect
+ * acknowledgment over WhatsApp through the same flow, so they share one card.
  */
 
 import { useState } from "react";
@@ -16,18 +16,15 @@ import {
   Card,
   Field,
   SectionTitle,
-  SeverityBadge,
   Spinner,
   inputClass,
 } from "../components/ui";
 
-/** Datetime-local gives us wall-clock text; stamp it as Singapore time. */
-function toSgtIso(local: string): string {
-  return `${local}:00+08:00`;
-}
+/** datetime-local gives wall-clock text; stamp it as Singapore time. */
+const toSgtIso = (local: string) => `${local}:00+08:00`;
 
-function formatWhen(iso: string): string {
-  return new Date(iso).toLocaleString("en-SG", {
+const formatWhen = (iso: string) =>
+  new Date(iso).toLocaleString("en-SG", {
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -35,13 +32,19 @@ function formatWhen(iso: string): string {
     minute: "2-digit",
     timeZone: "Asia/Singapore",
   });
-}
+
+const KIND_STYLE: Record<string, string> = {
+  training: "bg-cu-teal-tint text-cu-teal-ink border-cu-teal-edge",
+  community: "bg-cu-orange-tint text-cu-orange-ink border-cu-orange/30",
+  briefing: "bg-cu-line-soft text-cu-body-text border-cu-border",
+};
 
 export default function Events() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
+  const [picks, setPicks] = useState<Record<number, string>>({});
+  const [expanded, setExpanded] = useState<number | null>(null);
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState("training");
@@ -64,10 +67,14 @@ export default function Events() {
     queryFn: () => get<Person[]>("/api/people"),
   });
   const enrollments = useQuery({
-    queryKey: ["enrollments", selected],
-    queryFn: () => get<Enrollment[]>(`/api/events/${selected}/enrollments`),
-    enabled: selected !== null,
+    queryKey: ["enrollments", expanded],
+    queryFn: () => get<Enrollment[]>(`/api/events/${expanded}/enrollments`),
+    enabled: expanded !== null,
   });
+
+  const refresh = (...keys: string[]) => {
+    for (const k of keys) queryClient.invalidateQueries({ queryKey: [k] });
+  };
 
   const createEvent = useMutation({
     mutationFn: () =>
@@ -82,12 +89,11 @@ export default function Events() {
       }),
     onSuccess: (created) => {
       setError(null);
-      setNotice(`Created "${created.title}".`);
+      setNotice(`Created “${created.title}”.`);
       setTitle("");
       setStart("");
       setEnd("");
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      queryClient.invalidateQueries({ queryKey: ["launch-control"] });
+      refresh("events", "launch-control");
     },
     onError: (err) => {
       setNotice(null);
@@ -98,11 +104,7 @@ export default function Events() {
   const enroll = useMutation({
     mutationFn: ({ eventId, personId }: { eventId: number; personId: number }) =>
       post(`/api/events/${eventId}/enroll`, { person_id: personId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enrollments", selected] });
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      queryClient.invalidateQueries({ queryKey: ["launch-control"] });
-    },
+    onSuccess: () => refresh("events", "enrollments", "launch-control"),
     onError: (err) => setError((err as Error).message),
   });
 
@@ -112,65 +114,60 @@ export default function Events() {
         `/api/events/${eventId}/invite`,
         { send_now: true },
       ),
-    onSuccess: (result) => {
+    onSuccess: (r) => {
       setError(null);
       setNotice(
-        `Queued ${result.queued} WhatsApp invite(s).` +
-          (result.skipped_no_consent
-            ? ` ${result.skipped_no_consent} skipped — no messaging consent.`
+        `Queued ${r.queued} WhatsApp invite(s).` +
+          (r.skipped_no_consent
+            ? ` ${r.skipped_no_consent} skipped — no messaging consent.`
             : ""),
       );
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      refresh("events");
     },
     onError: (err) => setError((err as Error).message),
   });
 
   const mark = useMutation({
-    mutationFn: ({
-      eventId,
-      personId,
-      attended,
-      outcome,
-    }: {
+    mutationFn: (v: {
       eventId: number;
       personId: number;
       attended: boolean;
       outcome?: string;
     }) =>
-      post(`/api/events/${eventId}/attendance`, {
-        person_id: personId,
-        attended,
-        assessment_outcome: outcome ?? null,
+      post(`/api/events/${v.eventId}/attendance`, {
+        person_id: v.personId,
+        attended: v.attended,
+        assessment_outcome: v.outcome ?? null,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["enrollments", selected] });
-      queryClient.invalidateQueries({ queryKey: ["launch-control"] });
       setNotice("Attendance recorded. The completion now awaits approval.");
+      refresh("enrollments", "launch-control", "pending-quals", "people");
     },
     onError: (err) => setError((err as Error).message),
   });
 
   if (events.isLoading) return <Spinner label="Loading events" />;
 
-  const chosen = events.data?.find((e) => e.id === selected) ?? null;
-
   return (
-    <div className="space-y-8">
+    <>
       <div>
-        <h1 className="font-display text-cu-h1 leading-tight text-cu-ink">
+        <h1 className="text-cu-h1 font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald">
           Events &amp; Academy
         </h1>
-        <p className="mt-1 text-cu-body text-cu-body-text">
-          Training sessions follow the locked calendar: Mon–Wed 0900–1200,
-          Thu 1400–1700, one Saturday a month, max 10 per session, no public
-          holidays.
+        <p className="mt-1.5 max-w-[70ch] text-[1.0625rem] text-cu-body-text">
+          Training follows the locked calendar: Mon–Wed 0900–1200, Thu
+          1400–1700, one Saturday a month, max 10 a session, no public holidays.
         </p>
       </div>
 
       {error && <Banner tone="red">{error}</Banner>}
-      {notice && <Banner tone="green">{notice}</Banner>}
+      {notice && (
+        <Banner tone="green" onDismiss={() => setNotice(null)}>
+          {notice}
+        </Banner>
+      )}
 
-      {/* --- create -------------------------------------------------------- */}
+      {/* --- create ------------------------------------------------------ */}
       <Card>
         <SectionTitle>Schedule an event</SectionTitle>
         <form
@@ -188,7 +185,6 @@ export default function Events() {
               required
             />
           </Field>
-
           <Field label="Type">
             <select
               className={inputClass}
@@ -200,7 +196,6 @@ export default function Events() {
               <option value="briefing">Briefing</option>
             </select>
           </Field>
-
           {kind === "training" && (
             <Field label="Module" hint="Leave blank to keep the slot unassigned.">
               <select
@@ -217,7 +212,6 @@ export default function Events() {
               </select>
             </Field>
           )}
-
           <Field label="Venue" required>
             <input
               className={inputClass}
@@ -226,7 +220,6 @@ export default function Events() {
               required
             />
           </Field>
-
           <Field label="Starts (Singapore time)" required>
             <input
               type="datetime-local"
@@ -236,7 +229,6 @@ export default function Events() {
               required
             />
           </Field>
-
           <Field label="Ends (Singapore time)" required>
             <input
               type="datetime-local"
@@ -246,7 +238,6 @@ export default function Events() {
               required
             />
           </Field>
-
           <Field label="Capacity">
             <input
               type="number"
@@ -256,7 +247,6 @@ export default function Events() {
               onChange={(e) => setCapacity(Number(e.target.value))}
             />
           </Field>
-
           <div className="flex items-end">
             <Button type="submit" disabled={createEvent.isPending}>
               {createEvent.isPending ? "Creating…" : "Create event"}
@@ -265,182 +255,181 @@ export default function Events() {
         </form>
       </Card>
 
-      {/* --- list ---------------------------------------------------------- */}
-      <section>
-        <SectionTitle hint={`${events.data?.length ?? 0} scheduled`}>
-          Scheduled
-        </SectionTitle>
-        <div className="overflow-x-auto rounded-cu-lg border border-cu-line bg-cu-surface">
-          <table className="w-full min-w-[52rem] text-left">
-            <thead className="border-b border-cu-line bg-cu-line-soft">
-              <tr className="text-cu-caption uppercase tracking-wide text-cu-body-text">
-                <th className="px-4 py-3 font-semibold">When</th>
-                <th className="px-4 py-3 font-semibold">Event</th>
-                <th className="px-4 py-3 font-semibold">Module</th>
-                <th className="px-4 py-3 font-semibold">Seats</th>
-                <th className="px-4 py-3 font-semibold">Replies</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.data?.slice(0, 60).map((event) => (
-                <tr key={event.id} className="border-b border-cu-line last:border-0">
-                  <td className="px-4 py-3 text-cu-body text-cu-ink">
-                    {formatWhen(event.starts_at)}
-                  </td>
-                  <td className="px-4 py-3 text-cu-body text-cu-ink">
-                    {event.title}
-                    <span className="block text-cu-caption text-cu-body-text">
-                      {event.venue}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-cu-body text-cu-body-text">
-                    {event.module_code ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-cu-body tabular-nums text-cu-ink">
-                    {event.seats_taken}/{event.capacity}
-                  </td>
-                  <td className="px-4 py-3 text-cu-caption tabular-nums text-cu-body-text">
-                    <span className="text-cu-green">{event.acknowledged_yes} yes</span>
+      {/* --- list -------------------------------------------------------- */}
+      <section aria-labelledby="sched-h">
+        <div id="sched-h">
+          <SectionTitle
+            rule
+            aside={
+              <p className="text-cu-body text-cu-body-text">
+                {events.data?.length ?? 0} on the calendar
+              </p>
+            }
+          >
+            Scheduled
+          </SectionTitle>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          {events.data?.slice(0, 40).map((ev) => {
+            const pct = ev.capacity
+              ? Math.min(100, Math.round((ev.seats_taken / ev.capacity) * 100))
+              : 0;
+            const open = expanded === ev.id;
+            return (
+              <article
+                key={ev.id}
+                className="rounded-2xl border border-cu-border bg-cu-panel p-5 shadow-[0_1px_3px_rgba(31,42,46,.07)] sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-cu-h3 font-bold text-cu-emerald">
+                      {ev.title}
+                    </h3>
+                    <p className="mt-1 text-cu-body text-cu-body-text">
+                      {formatWhen(ev.starts_at)} · {ev.venue}
+                    </p>
+                  </div>
+                  <span
+                    className={`flex-none rounded-full border px-3 py-1 text-cu-caption font-bold ${
+                      KIND_STYLE[ev.kind] ?? KIND_STYLE.briefing
+                    }`}
+                  >
+                    {ev.module_code ?? ev.kind}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="text-cu-body font-bold text-cu-ink">
+                    {ev.seats_taken} / {ev.capacity} enrolled
+                  </span>
+                  <div className="flex h-2.5 min-w-[140px] max-w-[260px] flex-1 overflow-hidden rounded-full bg-cu-sage">
+                    <div
+                      className="h-full rounded-full bg-cu-teal-ink"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-cu-caption tabular-nums text-cu-body-text">
+                    <span className="text-cu-green">{ev.acknowledged_yes} yes</span>
                     {" · "}
-                    <span className="text-cu-red">{event.acknowledged_no} no</span>
+                    <span className="text-cu-red">{ev.acknowledged_no} no</span>
                     {" · "}
-                    {event.awaiting_reply} waiting
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-md bg-cu-line-soft px-2 py-1 text-cu-caption font-semibold text-cu-body-text">
-                      {event.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => setSelected(event.id)}
-                        className="px-3 py-1.5"
+                    {ev.awaiting_reply} waiting
+                  </span>
+                  <Button
+                    variant="ghost"
+                    disabled={invite.isPending}
+                    onClick={() => invite.mutate(ev.id)}
+                  >
+                    Send WhatsApp invites
+                  </Button>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-end gap-2.5">
+                  <div className="min-w-[220px] flex-1">
+                    <Field label="Add someone to this event">
+                      <select
+                        className={inputClass}
+                        value={picks[ev.id] ?? ""}
+                        onChange={(e) =>
+                          setPicks({ ...picks, [ev.id]: e.target.value })
+                        }
                       >
-                        Manage
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => invite.mutate(event.id)}
-                        disabled={invite.isPending}
-                        className="px-3 py-1.5"
-                      >
-                        Invite
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        <option value="">Choose a person</option>
+                        {people.data?.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.preferred_name} — {p.phone_e164}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    disabled={!picks[ev.id] || enroll.isPending}
+                    onClick={() => {
+                      enroll.mutate({
+                        eventId: ev.id,
+                        personId: Number(picks[ev.id]),
+                      });
+                      setPicks({ ...picks, [ev.id]: "" });
+                    }}
+                  >
+                    Enrol
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    onClick={() => setExpanded(open ? null : ev.id)}
+                  >
+                    {open ? "Hide attendance" : "Attendance"}
+                  </Button>
+                </div>
+
+                {open && (
+                  <div className="mt-4 border-t border-cu-border pt-4">
+                    {enrollments.isLoading ? (
+                      <Spinner label="Loading attendance" />
+                    ) : enrollments.data?.length ? (
+                      <ul className="divide-y divide-cu-border">
+                        {enrollments.data.map((row) => (
+                          <li
+                            key={row.id}
+                            className="flex flex-wrap items-center justify-between gap-3 py-3"
+                          >
+                            <div>
+                              <p className="text-cu-body font-semibold text-cu-ink">
+                                {row.preferred_name}
+                              </p>
+                              <p className="text-cu-caption text-cu-body-text">
+                                {row.status}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="secondary"
+                                disabled={mark.isPending}
+                                onClick={() =>
+                                  mark.mutate({
+                                    eventId: ev.id,
+                                    personId: row.person_id,
+                                    attended: true,
+                                    outcome: ev.assessment_required
+                                      ? "pass"
+                                      : undefined,
+                                  })
+                                }
+                              >
+                                Attended
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                disabled={mark.isPending}
+                                onClick={() =>
+                                  mark.mutate({
+                                    eventId: ev.id,
+                                    personId: row.person_id,
+                                    attended: false,
+                                  })
+                                }
+                              >
+                                No show
+                              </Button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-cu-body text-cu-body-text">
+                        Nobody enrolled yet.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
-
-      {/* --- manage -------------------------------------------------------- */}
-      {chosen && (
-        <Card>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <SectionTitle hint={`${formatWhen(chosen.starts_at)} · ${chosen.venue}`}>
-              {chosen.title}
-            </SectionTitle>
-            <Button variant="ghost" onClick={() => setSelected(null)} className="px-3 py-1.5">
-              Close
-            </Button>
-          </div>
-
-          <div className="mb-5">
-            <Field label="Add someone to this event">
-              <select
-                className={inputClass}
-                defaultValue=""
-                onChange={(e) => {
-                  if (!e.target.value) return;
-                  enroll.mutate({
-                    eventId: chosen.id,
-                    personId: Number(e.target.value),
-                  });
-                  e.target.value = "";
-                }}
-              >
-                <option value="">Choose a person…</option>
-                {people.data?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.preferred_name} — {p.phone_e164}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          {enrollments.isLoading ? (
-            <Spinner label="Loading attendance" />
-          ) : enrollments.data?.length ? (
-            <ul className="divide-y divide-cu-line">
-              {enrollments.data.map((row) => (
-                <li
-                  key={row.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3"
-                >
-                  <div>
-                    <p className="text-cu-body font-semibold text-cu-ink">
-                      {row.preferred_name}
-                    </p>
-                    <p className="text-cu-caption text-cu-body-text">{row.status}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      className="px-3 py-1.5"
-                      disabled={mark.isPending}
-                      onClick={() =>
-                        mark.mutate({
-                          eventId: chosen.id,
-                          personId: row.person_id,
-                          attended: true,
-                          outcome: chosen.assessment_required ? "pass" : undefined,
-                        })
-                      }
-                    >
-                      Attended
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="px-3 py-1.5"
-                      disabled={mark.isPending}
-                      onClick={() =>
-                        mark.mutate({
-                          eventId: chosen.id,
-                          personId: row.person_id,
-                          attended: false,
-                        })
-                      }
-                    >
-                      No show
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="py-4 text-cu-body text-cu-body-text">
-              Nobody enrolled yet.
-            </p>
-          )}
-
-          {chosen.assessment_required && (
-            <p className="mt-4 flex items-center gap-2">
-              <SeverityBadge severity="amber" label="Assessment required" />
-              <span className="text-cu-caption text-cu-body-text">
-                Marking attended records a pass. Completion still needs human
-                approval before it counts.
-              </span>
-            </p>
-          )}
-        </Card>
-      )}
-    </div>
+    </>
   );
 }

@@ -1,6 +1,14 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { apiBase, post, setToken } from "../api/client";
-import { Banner, Button, Card, Field, inputClass } from "../components/ui";
+import { Banner, Button, Field, inputClass } from "../components/ui";
+import { Brand } from "../App";
+
+interface TokenResponse {
+  access_token: string;
+  role: string;
+  full_name: string;
+}
 
 /**
  * A deployed static build with no VITE_API_BASE_URL has no backend to talk to.
@@ -10,12 +18,6 @@ function apiUnreachable(): boolean {
   if (apiBase()) return false;
   const host = window.location.hostname;
   return host !== "localhost" && host !== "127.0.0.1";
-}
-
-interface TokenResponse {
-  access_token: string;
-  role: string;
-  full_name: string;
 }
 
 export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
@@ -43,26 +45,30 @@ export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
   }
 
   return (
-    <div className="mx-auto mt-12 max-w-md">
-      <div className="mb-6 text-center">
-        <p className="font-display text-cu-h1 leading-tight text-cu-teal-ink">
-          CU-OS
+    <div className="grid min-h-screen place-items-center bg-cu-emerald p-6">
+      <div className="w-full max-w-[420px] rounded-2xl bg-cu-panel p-6 shadow-[0_18px_50px_rgba(5,53,49,.35)] sm:p-9">
+        <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2.5">
+          <Brand size={34} />
+        </span>
+
+        <h1 className="mt-5 text-[2rem] font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
+          Sign in
+        </h1>
+        <p className="mt-2 text-cu-body leading-relaxed text-cu-body-text">
+          The capacity engine behind Community Unlimited. Ask a coordinator if
+          you need access.
         </p>
-        <p className="text-cu-body text-cu-body-text">
-          Community Unlimited · staff sign in
-        </p>
-      </div>
-      {apiUnreachable() && (
-        <div className="mb-4">
-          <Banner tone="amber">
-            <strong>No API connected.</strong> This is the CU-OS interface
-            deployed on its own. Sign-in and data need the FastAPI backend
-            running and <code>VITE_API_BASE_URL</code> pointed at it.
-          </Banner>
-        </div>
-      )}
-      <Card>
-        <form onSubmit={submit} className="space-y-4">
+
+        {apiUnreachable() && (
+          <div className="mt-5">
+            <Banner tone="amber">
+              <strong>No API connected.</strong> Sign-in needs the backend
+              running and <code>VITE_API_BASE_URL</code> pointed at it.
+            </Banner>
+          </div>
+        )}
+
+        <form onSubmit={submit} className="mt-6 space-y-4">
           {error && <Banner tone="red">{error}</Banner>}
           <Field label="Email" required>
             <input
@@ -88,11 +94,17 @@ export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
             {busy ? "Signing in…" : "Sign in"}
           </Button>
         </form>
-      </Card>
-      <p className="mt-4 text-center text-cu-caption text-cu-body-text">
-        Community members don't need an account — they register and take part
-        over WhatsApp.
-      </p>
+
+        <p className="mt-5 text-cu-body text-cu-body-text">
+          Registering someone instead?{" "}
+          <Link
+            to="/register"
+            className="font-bold text-cu-teal-ink underline"
+          >
+            Open the registration form
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

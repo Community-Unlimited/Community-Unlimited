@@ -32,6 +32,18 @@
   --color-cu-orange-tint: #fdede7;
 
   --color-cu-emerald: #053531;     /* 13.46:1 */
+  /* Text on an orange fill. The imported design used the emerald #053531 here,
+     which measures 3.89:1 on #EA5C2A — under AA for 16px bold. Darkening the
+     ORANGE makes it worse (emerald is already dark), so the text darkens
+     instead: 4.59:1, and visually indistinguishable. */
+  --color-cu-emerald-ink: #042724;
+
+  /* --- surfaces (from the Command Centre design) ------------------------ */
+  --color-cu-sage: #dce5e4;        /* page field; ink on it 11.46:1 */
+  --color-cu-panel: #eef3f2;       /* raised panel; ink 13.11:1 */
+  --color-cu-mist: #f7fafa;        /* quiet button fill; teal-ink 5.80:1 */
+  --color-cu-border: #d4dedd;
+  --color-cu-border-strong: #cfdad9;
 
   /* --- neutrals --------------------------------------------------------- */
   --color-cu-ink: #1f2a2e;         /* 14.70:1 - body text */
@@ -78,7 +90,7 @@
    (measured: 18 of 23 colour tokens, so `bg-cu-emerald` would not resolve).
    Cost is a few KB; the alternative is an agent writing classes that do
    nothing. */
-@source inline("{bg,text,border}-cu-{teal,teal-ink,teal-mid,teal-tint,teal-tint-strong,teal-edge,orange,orange-ink,orange-tint,emerald,ink,body-text,muted,line,line-soft,page,surface,green,green-tint,amber,amber-tint,red,red-tint}");
+@source inline("{bg,text,border}-cu-{teal,teal-ink,teal-mid,teal-tint,teal-tint-strong,teal-edge,orange,orange-ink,orange-tint,emerald,emerald-ink,ink,body-text,muted,line,line-soft,page,surface,green,green-tint,amber,amber-tint,red,red-tint,sage,panel,mist,border,border-strong}");
 @source inline("text-cu-{h1,h2,h3,body,caption}");
 @source inline("rounded-cu{,-lg}");
 @source inline("font-{sans,display}");
@@ -109,7 +121,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-cu-page);
+  /* The Command Centre design sits on a sage field, not near-white — the
+     panels only read as raised against it. */
+  background: var(--color-cu-sage);
   color: var(--color-cu-ink);
   font-family: var(--font-sans);
   font-size: var(--text-cu-body);
