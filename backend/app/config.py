@@ -7,9 +7,10 @@ image can run in dev and production without code changes.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -25,7 +26,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 720
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # NoDecode is load-bearing. pydantic-settings treats a `list` field as a
+    # "complex" type and runs json.loads() on the raw env value *before* any
+    # field_validator, so a plain `CU_CORS_ORIGINS=https://a.com,https://b.com`
+    # dies with a JSONDecodeError at import time — the app never starts. Local
+    # dev hid this because the default was used and no env var was set.
+    # NoDecode suppresses that pre-parse and hands the raw string to the
+    # validator below, which is what accepts the comma-separated form.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     # WhatsApp. "fake" keeps the whole app runnable with no Meta credentials.
     whatsapp_provider: str = "fake"

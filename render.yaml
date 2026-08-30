@@ -1,0 +1,42 @@
+# Render blueprint — no CLI needed: push this, then in the Render dashboard
+# choose New > Blueprint and point it at this repo.
+#
+# NOTE ON PLAN: a persistent disk requires a paid instance (Starter, ~US$7/mo).
+# On the free plan the disk is dropped and the service sleeps after inactivity,
+# so SQLite data is lost on every restart and the first webhook after a sleep
+# times out. Free is fine for a demo; not for real registrations.
+
+services:
+  - type: web
+    name: cu-os-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: singapore
+    plan: starter
+    healthCheckPath: /api/health
+    # One instance only: the reminder sweep is an in-process loop and a second
+    # instance double-sends.
+    numInstances: 1
+    disk:
+      name: cuos-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: CU_DATABASE_URL
+        value: sqlite:////data/cuos.db
+      - key: CU_WHATSAPP_PROVIDER
+        value: fake
+      - key: CU_CORS_ORIGINS
+        value: https://cu-os-six.vercel.app,https://cu-os-community-unlimited.vercel.app
+      - key: CU_JWT_SECRET
+        generateValue: true
+      # Set in the dashboard once Meta credentials exist; leave blank for now.
+      - key: CU_WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: CU_WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: CU_WHATSAPP_APP_SECRET
+        sync: false
+      - key: CU_WHATSAPP_VERIFY_TOKEN
+        sync: false
