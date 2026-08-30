@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BrowserRouter,
   Link,
@@ -60,6 +60,32 @@ function Shell({
   onSignOut: () => void;
 }) {
   const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the sheet whenever the route changes, so tapping a link doesn't
+  // leave the menu covering the page it just opened.
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  const navLink = (item: (typeof NAV)[number], stacked: boolean) => {
+    const active = pathname === item.to;
+    return (
+      <Link
+        key={item.to}
+        to={item.to}
+        aria-current={active ? "page" : undefined}
+        className={`tap-target inline-flex items-center rounded-xl px-4 text-cu-body ${
+          stacked ? "w-full" : ""
+        } ${
+          active
+            ? "bg-cu-teal-edge/20 font-bold text-white shadow-[inset_0_-3px_0_var(--color-cu-teal)]"
+            : "font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+        }`}
+      >
+        {item.label}
+      </Link>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-cu-sage">
       <a
@@ -70,42 +96,26 @@ function Shell({
       </a>
 
       <header className="sticky top-0 z-20 bg-cu-emerald">
-        <div className="mx-auto flex min-h-[68px] max-w-[1760px] flex-wrap items-center gap-x-5 gap-y-3 px-4 py-2.5 sm:px-8 lg:px-11">
-          <Link to="/" aria-label="Command Centre">
+        {/* One row at every width. Below md the links move into a sheet — the
+            previous flex-wrap layout stacked into three rows on a phone and
+            ate roughly half the viewport before any content. */}
+        <div className="mx-auto flex min-h-[64px] max-w-[1760px] items-center gap-4 px-4 py-2.5 sm:px-8 lg:px-11">
+          <Link to="/" aria-label="Command Centre" className="shrink-0">
             <Brand />
           </Link>
 
-          <nav aria-label="Main" className="flex flex-wrap gap-1">
-            {NAV.map((item) => {
-              const active = pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  aria-current={active ? "page" : undefined}
-                  className={`tap-target inline-flex items-center rounded-xl px-4 text-cu-body ${
-                    active
-                      ? "bg-cu-teal-edge/20 font-bold text-white shadow-[inset_0_-3px_0_var(--color-cu-teal)]"
-                      : "font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+          <nav aria-label="Main" className="ml-2 hidden gap-1 md:flex">
+            {NAV.map((item) => navLink(item, false))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto hidden items-center gap-3 md:flex">
             <Link
               to="/register"
               className="tap-target inline-flex items-center rounded-xl border-[1.5px] border-cu-teal-edge/45 px-4 text-cu-body font-semibold text-cu-teal-edge hover:border-cu-teal-ink hover:bg-cu-teal-tint hover:text-cu-teal-ink"
             >
               Registration form
             </Link>
-            <span
-              aria-hidden="true"
-              className="h-7 w-px bg-cu-teal-edge/30"
-            />
+            <span aria-hidden="true" className="h-7 w-px bg-cu-teal-edge/30" />
             <button
               onClick={onSignOut}
               className="tap-target rounded-xl px-3.5 text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
@@ -113,7 +123,45 @@ function Shell({
               Sign out
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            className="tap-target ml-auto inline-flex items-center gap-2 rounded-xl border-[1.5px] border-cu-teal-edge/45 px-3.5 text-cu-body font-semibold text-cu-teal-edge md:hidden"
+          >
+            <span aria-hidden="true" className="text-[1.25rem] leading-none">
+              {menuOpen ? "✕" : "☰"}
+            </span>
+            Menu
+          </button>
         </div>
+
+        {menuOpen && (
+          <div
+            id="mobile-menu"
+            className="border-t border-cu-teal-edge/20 px-4 pb-4 pt-2 md:hidden"
+          >
+            <nav aria-label="Main" className="flex flex-col gap-1">
+              {NAV.map((item) => navLink(item, true))}
+            </nav>
+            <div className="mt-3 flex flex-col gap-2 border-t border-cu-teal-edge/20 pt-3">
+              <Link
+                to="/register"
+                className="tap-target inline-flex w-full items-center rounded-xl border-[1.5px] border-cu-teal-edge/45 px-4 text-cu-body font-semibold text-cu-teal-edge"
+              >
+                Registration form
+              </Link>
+              <button
+                onClick={onSignOut}
+                className="tap-target w-full rounded-xl px-4 text-left text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main

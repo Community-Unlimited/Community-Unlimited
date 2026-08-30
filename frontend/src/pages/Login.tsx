@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiBase, post, setToken } from "../api/client";
+import { get, post, setToken } from "../api/client";
 import { Banner, Button, Field, inputClass } from "../components/ui";
 import { Brand } from "../App";
 
@@ -10,21 +10,27 @@ interface TokenResponse {
   full_name: string;
 }
 
-/**
- * A deployed static build with no VITE_API_BASE_URL has no backend to talk to.
- * Say so plainly rather than letting sign-in fail with a bare 404.
- */
-function apiUnreachable(): boolean {
-  if (apiBase()) return false;
-  const host = window.location.hostname;
-  return host !== "localhost" && host !== "127.0.0.1";
-}
-
 export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Ask the API whether it is there, rather than inferring it from the build
+  // config. The old check assumed "no VITE_API_BASE_URL means no backend",
+  // which was true only while the frontend was deployed on its own. Now that
+  // the API serves this page from the same origin, an empty base is the
+  // normal case — the guess reported a working connection as broken.
+  const [apiDown, setApiDown] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    get<{ status: string }>("/api/health")
+      .then(() => !cancelled && setApiDown(false))
+      .catch(() => !cancelled && setApiDown(true));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -59,11 +65,11 @@ export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
           you need access.
         </p>
 
-        {apiUnreachable() && (
+        {apiDown && (
           <div className="mt-5">
             <Banner tone="amber">
-              <strong>No API connected.</strong> Sign-in needs the backend
-              running and <code>VITE_API_BASE_URL</code> pointed at it.
+              <strong>Can't reach the server.</strong> It may be starting up —
+              wait a moment and try again.
             </Banner>
           </div>
         )}
