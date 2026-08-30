@@ -1,0 +1,97 @@
+# ---------------------------------------------------------------------------
+# CU-OS
+#
+# One ignore file for the whole repo. A pattern without a slash matches at any
+# depth, so `.env` covers `backend/.env` and `dist/` covers `frontend/dist/`.
+# ---------------------------------------------------------------------------
+
+# --- secrets ---------------------------------------------------------------
+# Deliberately broad. The Meta/WhatsApp credentials land here next, and a token
+# committed once stays in history even after the file is deleted.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*secret*.json
+*.token
+.vercel-token
+
+# --- Python / backend ------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# The dev database and its sidecars. The schema lives in alembic/versions and
+# the contents come from seed.py, so nothing here is worth keeping.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# --- Node / frontend -------------------------------------------------------
+# `dist/` also covers frontend/dist/types (emitted by `npm run build:types`)
+# and frontend/dist/ds.css (the stable stylesheet copy design-sync reads).
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# browser / e2e artifacts
+playwright-report/
+test-results/
+.playwright/
+
+# --- design-sync -----------------------------------------------------------
+# Staged converter scripts, regenerated bundle output, and per-machine state.
+# The durable inputs — config.json, NOTES.md, conventions.md, previews/ and
+# overrides/ — are deliberately NOT ignored; re-syncs reuse them.
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/upload-manifest.txt
+
+# --- deploy ----------------------------------------------------------------
+.vercel
+
+# --- editors ---------------------------------------------------------------
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# Machine-local Claude Code settings. A shared .claude/settings.json still
+# commits normally.
+.claude/settings.local.json
+
+# --- OS --------------------------------------------------------------------
+# desktop.ini is not boilerplate here: this working copy lives inside a
+# OneDrive folder, which writes one into the directories it syncs.
+desktop.ini
+Thumbs.db
+ehthumbs.db
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+# --- misc ------------------------------------------------------------------
+*.log
+*.bak
+*.tmp

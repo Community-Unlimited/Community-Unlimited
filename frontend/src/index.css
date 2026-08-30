@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Community Unlimited design tokens
+   Derived from "20260620 Community Unlimited Brandguide v0.7".
+
+   The brand's stated primary, Harmony Green #3CBFB8, measures 2.25:1 against
+   white. It cannot legally carry text or act as a button fill under WCAG AA,
+   and the brief is explicit that the product must be readable for older users
+   (18: "clear contrast"; slide 25: "WCAG-friendly contrast").
+
+   The brand deck already resolves this itself - it uses #0E6E68 wherever teal
+   carries type. So:
+
+     --cu-teal          #3CBFB8  identity fill ONLY. Never behind text.
+     --cu-teal-ink      #0E6E68  6.09:1 - interactive teal, links, buttons.
+
+   Every foreground/background pair below was measured, not eyeballed.
+   ========================================================================== */
+
+@theme {
+  /* --- brand ------------------------------------------------------------ */
+  --color-cu-teal: #3cbfb8;        /* 2.25:1 - decorative fill only */
+  --color-cu-teal-ink: #0e6e68;    /* 6.09:1 on white */
+  --color-cu-teal-mid: #1aa39a;    /* 3.11:1 - large text / borders only */
+  --color-cu-teal-tint: #e8f6f5;   /* ink on this: 13.25:1 */
+  --color-cu-teal-tint-strong: #d6eeec;
+  --color-cu-teal-edge: #9fd4cf;
+
+  --color-cu-orange: #ea5c2a;      /* 3.46:1 - brand fill, large text only */
+  --color-cu-orange-ink: #a83c17;  /* 6.32:1 on white, 5.55:1 on its tint */
+  --color-cu-orange-tint: #fdede7;
+
+  --color-cu-emerald: #053531;     /* 13.46:1 */
+  /* Text on an orange fill. The imported design used the emerald #053531 here,
+     which measures 3.89:1 on #EA5C2A — under AA for 16px bold. Darkening the
+     ORANGE makes it worse (emerald is already dark), so the text darkens
+     instead: 4.59:1, and visually indistinguishable. */
+  --color-cu-emerald-ink: #042724;
+
+  /* --- surfaces (from the Command Centre design) ------------------------ */
+  --color-cu-sage: #dce5e4;        /* page field; ink on it 11.46:1 */
+  --color-cu-panel: #eef3f2;       /* raised panel; ink 13.11:1 */
+  --color-cu-mist: #f7fafa;        /* quiet button fill; teal-ink 5.80:1 */
+  --color-cu-border: #d4dedd;
+  --color-cu-border-strong: #cfdad9;
+
+  /* --- neutrals --------------------------------------------------------- */
+  --color-cu-ink: #1f2a2e;         /* 14.70:1 - body text */
+  /* Named -body-text, not -body: `--color-cu-body` and `--text-cu-body` would
+     both generate the utility `text-cu-body` and collide. */
+  --color-cu-body-text: #44525a;   /* 8.08:1 - secondary text */
+  --color-cu-muted: #8a969c;       /* 3.03:1 - large text / icons only */
+  --color-cu-line: #e4e9eb;
+  --color-cu-line-soft: #eef1f2;
+  --color-cu-page: #fafbfb;
+  --color-cu-surface: #ffffff;
+
+  /* --- status (RAG) ----------------------------------------------------- */
+  /* The deck's own greens/ambers fail on white, so these are darkened
+     equivalents. Each passes 4.5:1 on white AND on its own tint. */
+  --color-cu-green: #17804f;       /* 4.96:1 white, 4.61:1 tint */
+  --color-cu-green-tint: #eff9f3;
+  --color-cu-amber: #845c00;       /* 5.98:1 white, 5.56:1 tint */
+  --color-cu-amber-tint: #fef6e4;
+  --color-cu-red: #c62828;         /* 5.62:1 white, 5.02:1 tint */
+  --color-cu-red-tint: #fdefef;
+
+  /* --- type ------------------------------------------------------------- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+
+  /* Brand type scale, slide 18. Body is 16px - the age-friendly floor. */
+  --text-cu-h1: 2.5rem;    /* 40 / Bold */
+  --text-cu-h2: 1.75rem;   /* 28 / Bold */
+  --text-cu-h3: 1.25rem;   /* 20 / Semibold */
+  --text-cu-body: 1rem;    /* 16 / Regular */
+  --text-cu-caption: 0.75rem; /* 12 / Medium */
+
+  --radius-cu: 0.75rem;
+  --radius-cu-lg: 1rem;
+}
+
+/* Tailwind emits utilities on demand, so a class the app never happens to use
+   is absent from the compiled stylesheet. That is fine for the app and wrong
+   for the design system: Claude Design renders static CSS with no Tailwind
+   compiler, so a design can only use classes that already exist here. Without
+   this safelist the brand surface silently shrinks to whatever the app used
+   (measured: 18 of 23 colour tokens, so `bg-cu-emerald` would not resolve).
+   Cost is a few KB; the alternative is an agent writing classes that do
+   nothing. */
+@source inline("{bg,text,border}-cu-{teal,teal-ink,teal-mid,teal-tint,teal-tint-strong,teal-edge,orange,orange-ink,orange-tint,emerald,emerald-ink,ink,body-text,muted,line,line-soft,page,surface,green,green-tint,amber,amber-tint,red,red-tint,sage,panel,mist,border,border-strong}");
+@source inline("text-cu-{h1,h2,h3,body,caption}");
+@source inline("rounded-cu{,-lg}");
+@source inline("font-{sans,display}");
+
+/* Inter and DM Serif Display are self-hosted in /public/fonts so the app has
+   no external font dependency and works offline. Falls back to system sans
+   if the files are absent. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/Inter-Variable.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/DMSerifDisplay-Regular.woff2") format("woff2");
+}
+
+html {
+  /* 18: large readable text. Never below 16px for body copy. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  /* The Command Centre design sits on a sage field, not near-white — the
+     panels only read as raised against it. */
+  background: var(--color-cu-sage);
+  color: var(--color-cu-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-cu-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible focus for keyboard users - required, not decorative. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-cu-teal-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 18: large tap targets. 44px is the accessibility floor for touch. */
+@utility tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
