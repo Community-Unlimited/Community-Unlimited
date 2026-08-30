@@ -1,0 +1,23 @@
+# Build context is the repo root; keep the image small and secret-free.
+**/node_modules/
+**/dist/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/*.db
+**/*.db-journal
+**/*.db-wal
+**/*.db-shm
+**/.env
+**/.env.*
+!**/.env.example
+.git/
+.ds-sync/
+ds-bundle/
+.design-sync/
+docs/
+*.md

@@ -1,17 +1,25 @@
-# Render blueprint — no CLI needed: push this, then in the Render dashboard
-# choose New > Blueprint and point it at this repo.
+# Render blueprint — ONE service for the whole app.
 #
-# NOTE ON PLAN: a persistent disk requires a paid instance (Starter, ~US$7/mo).
-# On the free plan the disk is dropped and the service sleeps after inactivity,
-# so SQLite data is lost on every restart and the first webhook after a sleep
-# times out. Free is fine for a demo; not for real registrations.
+# The root Dockerfile builds the React SPA and copies it into the Python image,
+# which serves it from the same origin as /api. That means no CORS, no
+# VITE_API_BASE_URL, one URL and one thing to pay for.
+#
+# No CLI needed: in the Render dashboard choose New > Blueprint and point it at
+# this repo.
+#
+# PLAN: a persistent disk requires a paid instance (Starter, ~US$7/mo). On the
+# free plan there is no disk and the service sleeps after inactivity, so SQLite
+# data is lost on restart and the first webhook after a sleep times out. Free
+# is fine for a demo; not for real registrations.
 
 services:
   - type: web
     name: cu-os-api
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    # Build context is the repo root — the image needs both frontend/ and
+    # backend/.
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     region: singapore
     plan: starter
     healthCheckPath: /api/health
@@ -25,13 +33,24 @@ services:
     envVars:
       - key: CU_DATABASE_URL
         value: sqlite:////data/cuos.db
+      # Set by the Dockerfile too; explicit here so it is visible in the
+      # dashboard.
+      - key: CU_STATIC_DIR
+        value: /app/static
       - key: CU_WHATSAPP_PROVIDER
         value: fake
-      - key: CU_CORS_ORIGINS
-        value: https://cu-os-six.vercel.app,https://cu-os-community-unlimited.vercel.app
       - key: CU_JWT_SECRET
         generateValue: true
-      # Set in the dashboard once Meta credentials exist; leave blank for now.
+      - key: CU_ADMIN_EMAIL
+        value: admin@communityunlimited.sg
+      # Set a real value in the dashboard — leaving this unset seeds the
+      # default password, which must never reach a public URL.
+      - key: CU_ADMIN_PASSWORD
+        sync: false
+      # Only needed if a separate frontend origin (e.g. Vercel) is kept.
+      # Same-origin serving needs no CORS at all.
+      - key: CU_CORS_ORIGINS
+        sync: false
       - key: CU_WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: CU_WHATSAPP_ACCESS_TOKEN

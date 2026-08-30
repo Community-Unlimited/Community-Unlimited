@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "sqlite:///./cuos.db"
+
+    # Directory holding the compiled SPA. When set and present, the API serves
+    # the frontend from the same origin — one service, no CORS. Unset locally,
+    # where Vite serves the UI on :5173 and proxies /api here.
+    static_dir: str = ""
     jwt_secret: str = "dev-only-change-me"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 720
