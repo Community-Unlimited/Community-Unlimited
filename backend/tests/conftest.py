@@ -25,6 +25,21 @@ ADMIN_EMAIL = "admin@test.local"
 ADMIN_PASSWORD = "test-password"
 
 
+@pytest.fixture(autouse=True)
+def force_fake_provider(monkeypatch):
+    """Pin the fake provider for every test, whatever .env says.
+
+    ``create_app`` reads the real settings, so without this the entire suite
+    depends on the developer's local ``CU_WHATSAPP_PROVIDER``: switching it to
+    ``twilio`` to send a live message would unmount the /api/dev routes and
+    turn a dozen green tests red for reasons that have nothing to do with the
+    change being tested.
+    """
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "whatsapp_provider", "fake", raising=False)
+
+
 @pytest.fixture
 def engine():
     eng = create_engine(
