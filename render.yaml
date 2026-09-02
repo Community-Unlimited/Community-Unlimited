@@ -59,3 +59,29 @@ services:
         sync: false
       - key: CU_WHATSAPP_VERIFY_TOKEN
         sync: false
+      # --- Twilio (set CU_WHATSAPP_PROVIDER=twilio to activate) -------------
+      # All sync:false — secrets are entered in the dashboard, never here.
+      - key: CU_TWILIO_ACCOUNT_SID
+        sync: false
+      # Required even when sends use the API key pair: inbound webhook
+      # signatures are keyed on the auth token and nothing else validates them.
+      - key: CU_TWILIO_AUTH_TOKEN
+        sync: false
+      - key: CU_TWILIO_API_KEY_SID
+        sync: false
+      - key: CU_TWILIO_API_KEY_SECRET
+        sync: false
+      - key: CU_TWILIO_WHATSAPP_FROM
+        sync: false
+      # Set this to the deployed URL of the webhook, exactly as registered in
+      # the Twilio console — e.g.
+      #   https://cu-os-api.onrender.com/api/whatsapp/twilio/webhook
+      # Render terminates TLS, so a URL rebuilt from the request arrives as
+      # http:// and the signature check fails with a 401 that reads like bad
+      # credentials. Setting it explicitly removes that failure mode.
+      - key: CU_TWILIO_WEBHOOK_URL
+        sync: false
+      - key: CU_TWILIO_STATUS_CALLBACK_URL
+        sync: false
+      - key: CU_TWILIO_CONTENT_SID_EVENT_INVITE
+        sync: false

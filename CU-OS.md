@@ -33,7 +33,7 @@ npm run dev
 Sign in with `admin@communityunlimited.sg` / `cuos-admin` (from `seed.py`;
 change both before this leaves your machine).
 
-Tests: `cd backend && ./.venv/Scripts/python.exe -m pytest -q` — 93 tests.
+Tests: `cd backend && ./.venv/Scripts/python.exe -m pytest -q` — 146 tests.
 
 Drop `--demo` to seed reference data without the six fake people.
 
@@ -49,7 +49,7 @@ Drop `--demo` to seed reference data without the six fake people.
 | Qualification rule engine with human approval + audited overrides | ✅ |
 | Launch Control — derives the capacity gap | ✅ |
 | Asset registry + 12-point Site Ready Gate | ✅ structure only |
-| WhatsApp invite / acknowledgment | ✅ offline seam, **not connected to Meta** |
+| WhatsApp invite / acknowledgment | ✅ offline seam + live Twilio transport |
 | Rostering, partners, programmes, equipment, incidents, impact | ⬜ modelled or deferred |
 
 ### The chain that works end to end
@@ -112,10 +112,25 @@ reason to store a frailty label. There is no such field.
 
 ---
 
-## WhatsApp — ready for next session
+## WhatsApp
 
-Nothing here talks to Meta yet. `CU_WHATSAPP_PROVIDER=fake` renders the real
-Cloud API body with no network, so the whole round trip is exercisable offline:
+Three transports, **one message shape**. `app/whatsapp/templates.py` renders
+the Meta Cloud API body, and that is what every provider receives and what
+`outbound_messages.payload` stores, whichever transport is live:
+
+| `CU_WHATSAPP_PROVIDER` | Transport | Notes |
+|---|---|---|
+| `fake` (default) | none | Renders the real body, no network. Mounts `/api/dev`. |
+| `cloud` | Meta WhatsApp Cloud API | Posts the body verbatim. |
+| `twilio` | Twilio WhatsApp | Translates the body to `ContentSid` + `ContentVariables`. |
+
+Keeping one canonical shape in the database means switching provider does not
+split `payload` into two dialects that every later reader has to branch on,
+and it keeps the fake provider representative of both. An unrecognised
+provider value is **rejected at startup** — a silent fallback to `fake` in
+production discards every invite with no error anywhere.
+
+Offline, the whole round trip is still exercisable with no account at all:
 
 ```bash
 curl -X POST localhost:8010/api/dev/simulate-reply \
@@ -124,31 +139,76 @@ curl -X POST localhost:8010/api/dev/simulate-reply \
 ```
 
 That signs a Meta-shaped envelope and pushes it through the *same*
-`webhook_handler.handle_payload` the live route uses. The dev endpoints
+`webhook_handler.handle_payload` the live routes use. The dev endpoints
 disappear automatically once a real provider is configured.
 
-To go live: set `CU_WHATSAPP_PROVIDER=cloud` plus the four `CU_WHATSAPP_*`
-credentials, and point Meta at `POST /api/whatsapp/webhook`.
+### Twilio
 
-**Start the template approval now — it is the long-lead item and gates nothing
-else.** Submit `cu_event_invite` as a **UTILITY** template with three
-quick-reply buttons (`ack_yes`, `ack_no`, `ack_maybe`) and four body variables:
-name, event title, when, venue.
+Set `CU_WHATSAPP_PROVIDER=twilio` plus the `CU_TWILIO_*` values in
+`.env.example`, and point Twilio at:
 
-Three constraints in the messaging code exist because of specific past bugs:
+| Twilio console field | URL |
+|---|---|
+| *When a message comes in* | `POST /api/whatsapp/twilio/webhook` |
+| *Status callback* (optional) | `POST /api/whatsapp/twilio/status` |
+
+Templates are managed from the repo, not the console:
+
+```bash
+python scripts/twilio_setup.py --status     # what exists, and its approval
+python scripts/twilio_setup.py --create     # create + submit for approval
+python scripts/twilio_setup.py --recreate   # after a rejection
+```
+
+Four things about this integration are load-bearing:
+
+- **The ContentSid is looked up by name, not pinned.** A rejected WhatsApp
+  template cannot be edited, only replaced, and the replacement gets a *new*
+  ContentSid. Pinning it means every approval iteration is a config change in
+  three places, and a stale pin fails at send time with a 404 that reads like
+  a credentials problem. `CU_TWILIO_CONTENT_SID_EVENT_INVITE` still pins it
+  when that is wanted.
+- **Signature validation is keyed on the auth token**, never the API key
+  secret — even though sends prefer the API key pair, which can be revoked on
+  its own.
+- **The signature covers the URL Twilio called.** Render terminates TLS, so a
+  URL rebuilt from the request arrives as `http://` and never matches, which
+  surfaces as a 401 that looks like bad credentials. Set
+  `CU_TWILIO_WEBHOOK_URL` to the exact registered URL.
+- **Quick-reply button ids must equal `ACK_PAYLOADS`** (`ack_yes`, `ack_no`,
+  `ack_maybe`). `scripts/twilio_setup.py` imports them rather than retyping
+  them; a mismatch arrives as an unrecognised payload and the acknowledgment
+  is silently dropped.
+
+The Twilio **sandbox** sender (`whatsapp:+14155238886`) needs each recipient
+to send its join code first, and business-initiated templates need an approved
+WhatsApp sender. Inside the 24-hour session window a quick-reply template
+sends without approval, which is what makes the sandbox testable today.
+
+### Meta
+
+Set `CU_WHATSAPP_PROVIDER=cloud` plus the four `CU_WHATSAPP_*` credentials and
+point Meta at `POST /api/whatsapp/webhook`. Submit `cu_event_invite` as a
+**UTILITY** template with three quick-reply buttons (`ack_yes`, `ack_no`,
+`ack_maybe`) and four body variables: name, event title, when, venue.
+
+### Constraints that exist because of specific past bugs
 
 - `outbound_messages.dedupe_key` is UNIQUE — that is what stops a double send.
   Cancelling **mangles** the key, or the cancelled row blocks that message
   forever.
-- `inbound_messages.provider_message_id` is UNIQUE — Meta redelivers on any
-  non-200, so the webhook always returns 200 on a well-formed body.
+- `inbound_messages.provider_message_id` is UNIQUE — both Meta and Twilio
+  redeliver on any non-2xx, so both webhooks always return 200 on a
+  well-formed body.
 - The acknowledgment guard rejects only **strictly older** timestamps. Meta
   timestamps are whole seconds, so two taps inside one second share a
   timestamp; requiring strictly-greater would discard a real change of mind.
   Duplicates are already handled by the UNIQUE above, so this is safe.
 
-Signature verification hashes the **raw request bytes** — re-serialising the
-parsed JSON produces different bytes and never matches.
+Meta signature verification hashes the **raw request bytes** — re-serialising
+the parsed JSON produces different bytes and never matches. Twilio signs
+something else entirely (URL + sorted form fields, HMAC-SHA1); the two live in
+`webhook_handler.py` and `twilio_webhook.py` respectively.
 
 ---
 
@@ -159,10 +219,11 @@ backend/
   app/
     models/        base.py has UtcDateTime + the naming convention
     services/      calendar · qualification · launch_control · audit
-    whatsapp/      provider (fake|cloud) · templates · outbox · webhook_handler
+    whatsapp/      provider (fake|cloud|twilio) · templates · outbox
+                   webhook_handler (Meta) · twilio_webhook · twilio_content
     api/           auth · public · people · academy · assets · launch · whatsapp · dev
   alembic/         render_as_batch + render_item hook for UtcDateTime
-  tests/           93 tests
+  tests/           146 tests
   seed.py
 frontend/
   src/index.css    design tokens, every contrast ratio measured

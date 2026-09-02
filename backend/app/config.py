@@ -42,12 +42,53 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:5173"]
     )
 
-    # WhatsApp. "fake" keeps the whole app runnable with no Meta credentials.
+    # WhatsApp transport. "fake" keeps the whole app runnable with no
+    # credentials at all; "cloud" is Meta's WhatsApp Cloud API; "twilio" is
+    # Twilio's WhatsApp channel. See app/whatsapp/provider.py.
     whatsapp_provider: str = "fake"
     whatsapp_phone_number_id: str = ""
     whatsapp_access_token: str = ""
     whatsapp_app_secret: str = ""
     whatsapp_verify_token: str = "cu-os-verify"
+
+    # --- Twilio ------------------------------------------------------------
+    # Sends prefer the API key pair (revocable without rotating the account
+    # password) and fall back to the auth token. The auth token is still
+    # required regardless: X-Twilio-Signature on inbound webhooks is keyed on
+    # the *auth token* and an API key secret will never validate it.
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_api_key_sid: str = ""
+    twilio_api_key_secret: str = ""
+    # Sender, in Twilio's channel-address form, e.g. "whatsapp:+14155238886".
+    twilio_whatsapp_from: str = ""
+    # The exact public URL registered with Twilio for the inbound webhook.
+    # Signature validation hashes the URL Twilio *called*, so behind Render's
+    # TLS proxy a reconstructed URL can come back as http:// and never match.
+    # Setting this removes the guesswork; leave empty to reconstruct from the
+    # X-Forwarded-* headers.
+    twilio_webhook_url: str = ""
+    # Delivery receipts. Set to the public URL of
+    # POST /api/whatsapp/twilio/status to have Twilio report sent/delivered/
+    # read/failed back onto the outbound row. Empty disables them, and the
+    # outbox then reports only that Twilio accepted the message.
+    twilio_status_callback_url: str = ""
+    # Optional pin. Left empty, the ContentSid is looked up by template name
+    # through the Content API, so a template re-created after a rejected
+    # approval (which mints a *new* SID) needs no config change.
+    twilio_content_sid_event_invite: str = ""
+
+    @field_validator("whatsapp_provider")
+    @classmethod
+    def _known_provider(cls, v: str) -> str:
+        # Fail loudly. Falling back to "fake" on a typo means every invite is
+        # silently discarded in production with a 200 and no error anywhere.
+        allowed = {"fake", "cloud", "twilio"}
+        if v not in allowed:
+            raise ValueError(
+                f"CU_WHATSAPP_PROVIDER={v!r} is not one of {sorted(allowed)}"
+            )
+        return v
 
     @field_validator("cors_origins", mode="before")
     @classmethod
