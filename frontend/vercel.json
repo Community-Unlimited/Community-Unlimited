@@ -4,6 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/QA", "destination": "/QA/index.html" },
+    { "source": "/qa", "destination": "/QA/index.html" },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
