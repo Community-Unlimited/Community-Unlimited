@@ -1,0 +1,1287 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community Unlimited — Boon Lay</title>
+<meta name="description" content="A Boon Lay neighbourhood movement, run by the people who live here. A Saturday walk, coffee on Tuesday and Thursday, a catch-up on Wednesday. Free. Message us on WhatsApp.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#053531">
+<meta property="og:title" content="Community Unlimited — Boon Lay">
+<meta property="og:description" content="You did not stop being useful. You stopped being asked. So we are asking.">
+<meta property="og:type" content="website">
+
+<!--
+  ============================================================================
+  COMMUNITY UNLIMITED — /QA review build
+  ============================================================================
+  A self-contained review page. It shares no code, CSS or route with the live
+  landing page, so the base path keeps rendering exactly what it renders today
+  and only /QA shows this.
+
+  THINGS A REVIEWER SHOULD KNOW BEFORE READING:
+
+  1. PHONE AND WHATSAPP ARE STILL THE PLACEHOLDERS THE LIVE PAGE USES
+     (+65 8000 0000 / wa.me/6580000000). They are carried over unchanged and
+     deliberately not invented, so this page compares like-for-like. Swap both
+     in one place: search WA_HREF and TEL_HREF below.
+
+  2. PHOTOGRAPHY IS LOADED FROM THE LIVE LANDING-PAGE DEPLOYMENT
+     (see --img-base / the IMG_BASE constant). The image files were never in
+     this repository. When this page moves into the landing-page repo, change
+     the eight src values from the absolute prefix to "assets/".
+
+  3. NOTHING ON THIS PAGE IS INVENTED. There are no member counts, no
+     completion rates, no testimonials, no named people, and no block numbers.
+     Every time stated (Sat 7am, Tue and Thu 9am-12pm, Wed 3pm) is a time the
+     movement already publishes. CU-OS.md 2.2 and backend/seed.py are explicit
+     that the site register is unconfirmed and the senior role titles are not
+     decided, so the page says exactly that instead of dressing it up.
+
+  4. THE H1's SECOND LINE IS THE ONE STRING THAT SHOULD NOT SHIP ON A
+     DESIGNER'S INSTINCT. Recommended: "So we are asking." Alternates worth
+     reading aloud first: "You stopped being asked." / "Boon Lay is asking." /
+     "Now we're asking." Search H1-LINE-2.
+  ============================================================================
+-->
+
+<style>
+/* ==========================================================================
+   TYPE
+   Both faces are the ones already self-hosted by this project, so the page
+   has no external font dependency and no network call to a third party.
+   DM Serif Display is used at display sizes only; body copy is always Inter.
+   ========================================================================== */
+@font-face{
+  font-family:"Inter";font-style:normal;font-weight:400 800;font-display:swap;
+  src:url("/fonts/Inter-Variable.woff2") format("woff2");
+}
+@font-face{
+  font-family:"DM Serif Display";font-style:normal;font-weight:400;font-display:swap;
+  src:url("/fonts/DMSerifDisplay-Regular.woff2") format("woff2");
+}
+
+/* ==========================================================================
+   TOKENS
+   Palette is the brandguide's, unchanged. Every foreground/background pair
+   used below was measured, not eyeballed:
+
+     bronze  #964E1E on wash #EAF7F6 ....  5.62:1   (AA normal text)
+     bronze  #964E1E on white ...........  6.17:1
+     ink-soft #3D5F5B on white .......... 	7.03:1
+     ink-soft #3D5F5B on wash ..........  6.41:1
+     wash    #EAF7F6 on emerald #053531 . 12.27:1
+     line    #CFE7E5 on emerald ......... 10.40:1
+     #042724 on orange #EA5C2A .........   4.59:1   (AA normal text)
+     white   on orange #EA5C2A .........   3.46:1   <- FAILS, never used
+     emerald on teal disc #3CBFB8 ......   5.99:1   (icon strokes)
+
+   That last pair is why every orange button carries near-black type rather
+   than white: white on this orange is AA-large only, and a 60-70 audience is
+   the likeliest to have raised their browser's minimum font size.
+   ========================================================================== */
+:root{
+  --teal:#3CBFB8;
+  --teal-deep:#0E6E68;
+  --orange:#EA5C2A;
+  --emerald:#053531;
+  --emerald-deep:#032420;
+  --bronze:#964E1E;
+  --paper:#fff;
+  --wash:#EAF7F6;
+  --wash-deep:#DCEFED;
+  --line:#CFE7E5;
+  --ink:#053531;
+  --ink-soft:#3D5F5B;
+  --on-orange:#042724;
+
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --fd:"DM Serif Display",Georgia,"Times New Roman",serif;
+
+  --shell:1180px;      /* body measure, unchanged from the live page          */
+  --shell-wide:1520px; /* the hero only — C1, "use more of the screen width"  */
+  --gut:clamp(20px,5vw,56px);
+  --rail:96px;         /* the folio rail. Never holds content.                */
+  --r:12px;            /* the ONLY radius on the page                         */
+  --mast:72px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+
+  --img-base:"https://community-unlimited-landing-page.vercel.app/assets";
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  scroll-padding-top:calc(var(--mast) + 24px);
+}
+body{
+  margin:0;
+  font-family:var(--f);
+  /* 19px, not 16. The primary reader is 60-70. */
+  font-size:19px;
+  line-height:1.6;
+  color:var(--ink);
+  background:var(--paper);
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums slashed-zero;
+  overflow-x:clip;
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+section[id],figure[id],li[id]{scroll-margin-top:calc(var(--mast) + 24px)}
+
+/* --- shells --------------------------------------------------------------- */
+.shell{max-width:var(--shell);margin-inline:auto;padding-inline:var(--gut)}
+.shell--wide{max-width:var(--shell-wide)}
+
+/* The rail grid. Repeated, deliberate asymmetry: the left 96px never holds
+   content, only the vertical folio, and body copy never runs the full width. */
+.railed{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);column-gap:32px}
+.folio{
+  grid-column:1;align-self:start;position:sticky;top:calc(var(--mast) + 32px);
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-size:14px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--bronze);white-space:nowrap;
+}
+.railed>.body{grid-column:2;min-width:0}
+@media (max-width:900px){
+  .railed{grid-template-columns:minmax(0,1fr)}
+  .folio{display:none}
+  .railed>.body{grid-column:1}
+}
+
+/* --- headings ------------------------------------------------------------- */
+.eyebrow{
+  font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--bronze);margin-bottom:14px;
+}
+.eyebrow--d{color:var(--teal)}
+.h2{
+  font-family:var(--fd);font-weight:400;
+  font-size:clamp(1.9rem,3.6vw,2.85rem);line-height:1.08;letter-spacing:-.012em;
+  color:var(--emerald);
+}
+.h3{font-size:1.3rem;line-height:1.3;font-weight:600;letter-spacing:-.01em}
+.lead{font-size:clamp(1.125rem,1.7vw,1.3125rem);line-height:1.55}
+.muted{color:var(--ink-soft)}
+.measure{max-width:58ch}
+
+/* The one section ornament: a 72px bronze rule under every H2. */
+.rule{width:72px;height:3px;background:var(--bronze);margin:20px 0 26px;border-radius:2px}
+
+.vh{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;border:0;
+}
+
+/* --- focus ---------------------------------------------------------------- */
+:focus-visible{outline:3px solid var(--bronze);outline-offset:3px;border-radius:2px}
+.onDark :focus-visible{outline-color:var(--wash)}
+.skip{
+  position:absolute;left:var(--gut);top:-120px;z-index:99;
+  background:var(--emerald);color:#fff;padding:14px 20px;
+  border-radius:0 0 var(--r) var(--r);font-weight:600;text-decoration:none;
+  transition:top .2s var(--ease);
+}
+.skip:focus{top:0}
+
+/* --- buttons -------------------------------------------------------------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:56px;padding:0 26px;
+  font:inherit;font-size:1.125rem;font-weight:700;line-height:1.2;letter-spacing:-.005em;
+  text-decoration:none;text-align:center;
+  border:2px solid transparent;border-radius:var(--r);cursor:pointer;
+  transition:background-color .18s var(--ease),border-color .18s var(--ease),transform .18s var(--ease);
+}
+.btn svg{flex:none}
+.btn--go{background:var(--orange);border-color:var(--bronze);color:var(--on-orange)}
+.btn--go:hover{background:#F06B3B;transform:translateY(-1px)}
+.btn--gd{background:transparent;border-color:var(--wash);color:var(--wash)}
+.btn--gd:hover{background:rgba(234,247,246,.12);transform:translateY(-1px)}
+.btn--g{background:transparent;border-color:var(--teal-deep);color:var(--emerald)}
+.btn--g:hover{border-color:var(--teal-deep);background:var(--wash);transform:translateY(-1px)}
+.btn--sm{min-height:48px;font-size:1.0625rem;padding:0 18px}
+
+/* Bronze inline text links. Padded to a 48px hit area without disturbing the
+   line rhythm of the paragraph they follow. */
+.tlink{
+  display:inline-flex;align-items:center;gap:8px;min-height:48px;
+  font-weight:600;color:var(--bronze);text-decoration:underline;
+  text-decoration-thickness:1px;text-underline-offset:5px;
+}
+.tlink:hover{text-decoration-thickness:2px}
+.tlink svg{width:20px;height:20px;stroke-width:2}
+
+/* --- icons ---------------------------------------------------------------- */
+.ic{width:40px;height:40px;fill:none;stroke:currentColor;stroke-width:1.75;
+    stroke-linecap:round;stroke-linejoin:round}
+.ic--sm{width:24px;height:24px;stroke-width:2}
+.btn .ic{width:22px;height:22px}
+/* Harmony Green earns real surface area here: a decorative disc behind each
+   pathway and pillar icon. It never sits behind text. */
+.disc{
+  width:56px;height:56px;flex:none;border-radius:50%;background:var(--teal);
+  display:grid;place-items:center;color:var(--emerald);
+}
+.disc .ic{width:32px;height:32px}
+
+/* --- photographic plates -------------------------------------------------- */
+/* A 1px bronze register frame with the image inset 8px. A wrapper border, not
+   a shadow: there is not one box-shadow on this page. */
+.plate{padding:8px;border:1px solid var(--bronze);background:var(--wash);margin:0}
+.plate__img{position:relative;display:block;overflow:hidden;isolation:isolate;background:var(--wash-deep)}
+.plate img{width:100%;height:100%;object-fit:cover}
+
+/* Faces stay in colour. Greyscaling eight photographs of older people is a
+   second route to the exact feeling we are trying to avoid, so only the band
+   is desaturated — and only because type has to sit on it. Everything else
+   gets a light unifying grade and keeps its warmth. */
+.plate--warm img{filter:saturate(.95) contrast(1.03)}
+
+/* --- masthead ------------------------------------------------------------- */
+.hdr{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);
+     backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+.hdr.scrolled{border-bottom-color:var(--line)}
+.hdr__in{display:flex;align-items:center;gap:20px;min-height:var(--mast)}
+.logo{display:flex;align-items:center;gap:12px;min-height:48px;text-decoration:none;margin-right:auto}
+.logo svg{width:38px;height:39px;flex:none}
+.logo b{font-size:15px;font-weight:700;line-height:1.05;letter-spacing:.09em;text-transform:uppercase}
+.logo--d b{color:#fff}
+.nav{display:flex;align-items:center;gap:2px}
+.nav a{
+  display:inline-flex;align-items:center;min-height:48px;padding:0 12px;
+  text-decoration:none;font-size:1.0625rem;font-weight:500;border-radius:8px;
+  transition:background-color .16s var(--ease);
+}
+.nav a:hover{background:var(--wash)}
+
+/* Mobile navigation is a scrolling anchor strip, not a drawer: a drawer needs
+   JavaScript, and this page has to work without it. */
+.strip{display:none;border-bottom:1px solid var(--line);background:var(--paper)}
+.strip ul{
+  display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x proximity;
+  padding:0 var(--gut) 6px;margin:0;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);
+}
+.strip ul::-webkit-scrollbar{display:none}
+.strip a{
+  display:inline-flex;align-items:center;min-height:48px;padding:0 14px;
+  white-space:nowrap;scroll-snap-align:start;text-decoration:none;
+  font-size:1.0625rem;font-weight:600;color:var(--bronze);
+}
+@media (max-width:900px){
+  :root{--mast:56px}
+  .nav,.hdr__in>.btn{display:none}
+  .strip{display:block;position:sticky;top:var(--mast);z-index:39}
+  html{scroll-padding-top:calc(var(--mast) + 56px + 16px)}
+}
+
+/* ==========================================================================
+   HERO  (feedback C1, C2, C8)
+   ========================================================================== */
+.hero{padding:clamp(20px,3vw,44px) 0 clamp(40px,6vw,88px)}
+.hero__grid{position:relative;display:grid;grid-template-columns:1fr}
+.hero__plate{position:relative;grid-area:1/1;z-index:1}
+.hero__plate .plate__img{height:380px}          /* C8.1 taller on mobile */
+.hero__panel{
+  position:relative;z-index:2;
+  background:var(--emerald);color:#fff;
+  border-radius:var(--r);                        /* C8.8 one radius, all four corners */
+  padding:26px 22px 30px;
+  margin:-24px 16px 0;                           /* C8.2 overlaps the plate by 24px */
+}
+.mast-rule{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.mast-rule span{
+  font-size:15px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--teal);
+}
+.mast-rule::before,.mast-rule::after{content:"";flex:1;height:1px;background:rgba(207,231,229,.35)}
+.mast-rule::before{display:none}
+
+.h1{
+  font-family:var(--fd);font-weight:400;color:#fff;
+  /* C2 / C8.3: ~10% down on both breakpoints, and locked to two lines. */
+  font-size:clamp(1.6rem,8.2vw,2.5rem);
+  line-height:1.02;letter-spacing:-.018em;margin-bottom:10px;
+}
+.h1 .lede{display:block}
+.h1 .turn{display:block;color:var(--teal)}
+.hero__sub{
+  font-size:1.1875rem;line-height:1.45;color:var(--line);
+  max-width:32ch;margin-bottom:18px;
+}
+@media (max-width:380px){
+  .hero__panel{padding:22px 16px 26px;margin:-24px 12px 0}
+  /* C8.5 wants both CTAs the same size. At 320px the WhatsApp label wrapped and
+     the two buttons stopped matching, so the label loses its padding rather
+     than its second line. */
+  .hero__cta .btn{padding:0 10px;gap:6px;font-size:1.0625rem}
+  /* NOTE: at 320px the subhead runs to three lines rather than the two C8.6
+     asks for. Dropping it under 19px to win the line back would break the
+     age-friendly type floor, which matters more to this audience than a line
+     count on a screen size almost none of them carry. Two lines from 360px up. */
+}
+.hero__cta{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+.hero__cta .btn{width:100%;padding:0 14px;gap:8px}                      /* C8.5 full width, equal size */
+.hero__note{font-size:1.1875rem;color:#9FD4CF;margin-top:14px}
+.hero__resident{
+  margin-top:22px;padding-left:16px;border-left:3px solid var(--bronze);
+  font-size:1.1875rem;color:var(--ink-soft);max-width:46ch;
+}
+
+@media (min-width:900px){
+  .hero__grid{
+    max-width:var(--shell-wide);margin-inline:auto;padding-inline:var(--gut);
+    grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+    align-items:center;column-gap:0;
+  }
+  /* C1: the plate takes the right 54% of a 1520px shell rather than the right
+     half of an 1180px one, which is the whole "use more of the screen width"
+     note. The panel overlaps only its leftmost sliver, so no face is covered. */
+  .hero__plate{grid-area:1/2;z-index:1}
+  .hero__plate .plate__img{height:auto;aspect-ratio:1/1}
+  .hero__plate img{object-position:62% 42%}
+  .hero__panel{
+    grid-area:1/1;z-index:2;align-self:center;
+    margin:0 -13% 0 0;padding:clamp(34px,3.2vw,46px);
+  }
+  .mast-rule::before{display:block}
+  .h1{font-size:clamp(2.15rem,3.95vw,3.7rem);line-height:.99;letter-spacing:-.022em;margin-bottom:14px}
+  .hero__sub{font-size:1.3125rem;max-width:34ch;margin-bottom:28px}
+  .hero__cta{display:flex;flex-wrap:wrap;gap:14px}
+  .hero__cta .btn{width:auto}
+  .hero__resident{margin-top:34px}
+}
+/* Must follow the 900px block: same specificity, so source order decides. */
+@media (min-width:1360px){
+  .hero__plate .plate__img{aspect-ratio:4/3}
+}
+
+/* ==========================================================================
+   WHO  (feedback C6 — moved from position 7 to position 3)
+   ========================================================================== */
+.sec{padding-block:clamp(52px,7vw,104px)}
+.sec--wash{background:var(--wash)}
+.sec__head{margin-bottom:clamp(28px,4vw,44px)}
+
+.who__plate{margin-bottom:clamp(28px,4vw,44px)}
+.who__plate .plate__img{aspect-ratio:4/5}
+.who__plate .plate__img{max-height:440px}
+@media (min-width:760px){.who__plate .plate__img{aspect-ratio:21/9}}
+
+.mindsets{display:grid;grid-template-columns:1fr;gap:0}
+.mindset{padding:26px 0;border-top:1px solid var(--line)}
+.mindset:first-child{border-top:0;padding-top:0}
+.mindset__lead{
+  font-family:var(--fd);font-weight:400;
+  font-size:1.4rem;line-height:1.24;color:var(--emerald);margin-bottom:12px;
+}
+.mindset p{max-width:34ch;color:var(--ink-soft)}
+@media (min-width:860px){
+  .mindsets{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:auto auto auto}
+  .mindset{display:grid;grid-row:span 3;grid-template-rows:subgrid;align-content:start}
+  .mindset{padding:0 34px;border-top:0;border-left:1px solid var(--line)}
+  .mindset:first-child{padding-left:0;border-left:0}
+  .mindset:last-child{padding-right:0}
+  .mindset__lead{font-size:1.5rem}
+}
+.also{
+  margin-top:clamp(28px,4vw,40px);padding-left:16px;
+  border-left:3px solid var(--bronze);
+  font-size:1.1875rem;color:var(--ink-soft);max-width:62ch;
+}
+
+/* ==========================================================================
+   PURPOSE  (feedback C4 — the review deck's Option 2, with Option 1's icons)
+   ========================================================================== */
+.purpose__grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,4vw,48px);align-items:start}
+@media (min-width:1000px){.purpose__grid{grid-template-columns:minmax(0,.78fr) minmax(0,1fr)}}
+@media (min-width:1000px) and (min-height:820px){
+  .purpose__plate{position:sticky;top:calc(var(--mast) + 32px)}
+}
+.purpose__plate .plate__img{aspect-ratio:4/5;max-height:520px}
+.statement{
+  font-family:var(--fd);font-weight:400;
+  font-size:clamp(1.6rem,3.1vw,2.3rem);line-height:1.18;letter-spacing:-.012em;
+  max-width:24ch;
+}
+.statement em{font-style:normal;color:var(--bronze)}
+
+/* Native <details>: no JavaScript, so it opens with scripting disabled. */
+.acc{border-bottom:1px solid var(--line)}
+.acc details{border-top:1px solid var(--line)}
+.acc summary{
+  display:grid;grid-template-columns:56px minmax(0,1fr) 24px;
+  align-items:center;gap:18px;
+  min-height:88px;padding:16px 0;cursor:pointer;
+  font-size:1.25rem;font-weight:600;color:var(--emerald);
+  list-style:none;
+}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary::marker{content:""}
+.acc summary:hover{color:var(--bronze)}
+/* Open state is carried by a bronze bar as well as the toggle mark, so it does
+   not depend on colour alone. */
+.acc details[open] summary{box-shadow:none}
+.acc details[open]{border-left:3px solid var(--bronze);padding-left:15px}
+.acc details[open]+details{border-top-color:var(--line)}
+.toggle{justify-self:end;color:var(--bronze)}
+.toggle .stem{transform-origin:12px 12px;transition:transform .18s var(--ease)}
+.acc details[open] .toggle .stem{transform:scaleY(0)}
+.acc__body{overflow:hidden;padding:0 0 22px 74px}
+.acc__body p{color:var(--ink-soft)}
+.acc__body p+p{margin-top:12px;color:var(--bronze)}
+@media (max-width:560px){
+  .acc summary{grid-template-columns:44px minmax(0,1fr) 24px;gap:14px;font-size:1.1875rem}
+  .acc .disc{width:44px;height:44px}
+  .acc .disc .ic{width:26px;height:26px}
+  .acc__body{padding-left:0}
+}
+
+/* ==========================================================================
+   BAND  (feedback C3)
+   ========================================================================== */
+.band{position:relative;isolation:isolate;background:var(--emerald);overflow:hidden}
+.band>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+          object-position:50% 42%;z-index:-2;filter:grayscale(1) contrast(1.05)}
+/* 90%: at the 82% the section was first drawn with, the brightest part of the
+   photograph pulled the caption under 4.5:1. Worst case at 90% — the caption
+   colour #CFE7E5 over emerald composited with a pure-white pixel — measures
+   9.13:1, so every string in this section clears AA with room to spare. */
+.band::after{content:"";position:absolute;inset:0;z-index:-1;background:rgba(5,53,49,.90)}
+.band__in{padding-block:clamp(56px,8vw,104px);color:#fff}
+
+/* C3: the caption must end where the title ends. The set shrink-wraps
+   (width:fit-content) and the caption is width:100%, which does not contribute
+   to an intrinsic width — so the caption can never widen the box and always
+   ends on the box's right edge. Above 760px the box is additionally capped at
+   40rem, because left to its own devices the headline's max-content is one
+   very long line and the cap is what makes it wrap into a block instead. */
+.band__set{width:fit-content;max-width:100%;min-width:0}
+.band__struck{
+  position:relative;display:inline-block;
+  font-weight:700;color:#9FD4CF;text-transform:uppercase;
+  font-size:clamp(1rem,1.7vw,1.1875rem);line-height:1.2;letter-spacing:.12em;
+}
+.band__struck::after{
+  content:"";position:absolute;left:-.04em;right:-.04em;top:56%;height:3px;
+  border-radius:2px;background:var(--orange);transform:rotate(-1.2deg);
+}
+.band__real{
+  font-family:var(--fd);font-weight:400;color:#fff;
+  font-size:clamp(2.1rem,5.2vw,3.6rem);line-height:1.02;letter-spacing:-.022em;
+  margin-top:14px;
+}
+.band__cap{width:100%;color:var(--wash);margin-top:22px}
+.band__cta{display:grid;grid-template-columns:1fr;gap:12px;margin-top:30px}
+.band__cta .btn{width:100%}
+@media (min-width:760px){
+  .band__set{width:min(100%,40rem)}
+  .band__cta{display:flex;flex-wrap:wrap;gap:14px}
+  .band__cta .btn{width:auto;min-width:238px}
+}
+
+/* ==========================================================================
+   PATHWAY  (feedback C5 icons + staggered reveal, C7 vertical rail on mobile)
+   ========================================================================== */
+/* C7: on a phone the gradient runs DOWN the left, alongside the steps, rather
+   than sitting as a bar above them. */
+.path{position:relative;display:grid;grid-template-columns:1fr;gap:0;padding-left:56px}
+.path::before{
+  content:"";position:absolute;left:26px;top:8px;bottom:26px;width:4px;border-radius:2px;
+  background:linear-gradient(180deg,var(--teal) 0 16%,var(--bronze) 52%,var(--orange) 84% 100%);
+}
+.step{position:relative;padding-bottom:34px}
+.step:last-child{padding-bottom:0}
+.step::before{
+  content:"";position:absolute;left:-35px;top:6px;width:14px;height:14px;
+  border-radius:50%;background:var(--wash);border:3px solid var(--bronze);
+}
+.step:last-child::before{border-color:var(--orange)}
+.step .disc{margin-bottom:14px}
+.step__n{
+  display:block;font-size:15px;font-weight:700;letter-spacing:.16em;
+  color:var(--bronze);margin-bottom:6px;
+}
+.step h3{font-size:1.25rem;font-weight:700;margin-bottom:6px}
+.step p{color:var(--ink-soft);max-width:38ch}
+@media (min-width:1040px){
+  .path{grid-template-columns:repeat(5,minmax(0,1fr));column-gap:28px;padding:44px 0 0}
+  .path::before{left:0;right:0;top:0;bottom:auto;width:auto;height:4px;
+    background:linear-gradient(90deg,var(--teal) 0 16%,var(--bronze) 52%,var(--orange) 84% 100%)}
+  .step{padding-bottom:0}
+  .step::before{left:0;top:-49px}
+  .step p{max-width:28ch}
+}
+.note{
+  margin-top:clamp(26px,3vw,36px);padding-left:16px;border-left:3px solid var(--bronze);
+  font-size:1.1875rem;color:var(--ink-soft);max-width:52ch;
+}
+
+/* ==========================================================================
+   WHAT'S ON
+   ========================================================================== */
+.grid3{display:grid;gap:clamp(20px,3vw,28px);grid-template-columns:1fr}
+@media (min-width:800px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.ev{display:flex;flex-direction:column;border-top:3px solid var(--emerald)}
+.ev__ph{margin-top:0}
+.ev__ph .plate__img{aspect-ratio:16/10}
+.ev__body{padding-top:18px;display:flex;flex-direction:column;flex:1}
+.ev__when{
+  display:flex;align-items:center;gap:8px;
+  font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--bronze);margin-bottom:8px;
+}
+.ev__when .ic{width:20px;height:20px;stroke-width:2}
+.ev h3{margin-bottom:8px}
+.ev p{color:var(--ink-soft);margin-bottom:12px}
+.ev__note{font-size:1.1875rem;color:var(--bronze);margin-bottom:18px}
+.ev .btn{margin-top:auto;align-self:stretch}
+.lookfirst{
+  margin-top:clamp(28px,4vw,40px);font-family:var(--fd);font-weight:400;
+  font-size:clamp(1.35rem,2.4vw,1.75rem);line-height:1.2;color:var(--emerald);
+}
+
+/* ==========================================================================
+   WHO ELSE  (deliberately low, deliberately light — this is the appendix)
+   ========================================================================== */
+.sec--quiet{padding-block:clamp(44px,5vw,72px)}
+.whoelse{display:grid;grid-template-columns:1fr;gap:clamp(26px,3vw,40px)}
+@media (min-width:820px){
+  .whoelse{grid-template-columns:1fr 1fr;column-gap:40px}
+  .whoelse>div:last-child{padding-left:40px;border-left:1px solid var(--line)}
+}
+.tag{
+  font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--bronze);margin-bottom:8px;
+}
+.whoelse h3{font-size:1.1875rem;font-weight:700;margin-bottom:8px;max-width:30ch}
+.whoelse p{color:var(--ink-soft);max-width:42ch}
+
+/* ==========================================================================
+   JOIN
+   ========================================================================== */
+.join{background:var(--emerald);color:#fff;padding-block:clamp(56px,7vw,100px)}
+.join__g{display:grid;grid-template-columns:1fr;gap:clamp(34px,4vw,56px)}
+@media (min-width:900px){.join__g{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start}}
+.join .h2{color:#fff}
+.join .rule{background:var(--teal)}
+.join__lede{color:var(--line);max-width:44ch;margin-bottom:24px}
+
+/* The exact words we send on your behalf, shown before you send them. Rendered
+   without quotation marks and labelled, because it is our message, not a
+   member's words. */
+.bubble__label{
+  font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal);margin-bottom:10px;
+}
+.bubble{
+  position:relative;max-width:40ch;background:var(--wash);color:var(--emerald);
+  border-radius:var(--r) var(--r) var(--r) 4px;padding:16px 18px;
+  font-size:1.1875rem;line-height:1.5;margin-bottom:26px;
+}
+.bubble::after{
+  content:"";position:absolute;left:0;bottom:-8px;
+  border:8px solid transparent;border-top-color:var(--wash);border-left-width:0;
+}
+.join__cta{display:grid;grid-template-columns:1fr;gap:12px}
+.join__cta .btn{width:100%}
+@media (min-width:560px){
+  .join__cta{display:flex;flex-wrap:wrap;gap:14px}
+  .join__cta .btn{width:auto}
+}
+
+/* Dotted leaders. A list of facts reads as a ledger rather than a feature
+   grid, and no component library ships one. */
+.facts{border-top:1px solid rgba(191,237,234,.28)}
+.facts>div{padding:16px 0;border-bottom:1px solid rgba(191,237,234,.28)}
+.facts dt{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal);
+}
+.facts dt::after{
+  content:"";flex:1;height:1em;min-width:14px;
+  background-image:radial-gradient(circle at 1px 50%,rgba(159,212,207,.6) 1px,transparent 1.2px);
+  background-size:6px 100%;background-repeat:repeat-x;background-position:0 calc(100% - .34em);
+}
+.facts dd{margin:8px 0 0;font-size:1.1875rem;color:#fff}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.ft{background:var(--emerald-deep);color:#fff;padding-block:clamp(40px,5vw,64px)}
+.ft__g{display:grid;grid-template-columns:1fr;gap:28px}
+@media (min-width:820px){.ft__g{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);column-gap:48px}}
+.ft h2{font-family:var(--fd);font-weight:400;font-size:1.5rem;margin-bottom:12px}
+.ft p{color:#9FD4CF;max-width:46ch}
+.ft__nav{display:flex;flex-wrap:wrap;gap:0 24px}
+.ft__nav a{
+  display:inline-flex;align-items:center;min-height:48px;
+  font-size:1.1875rem;color:#9FD4CF;text-decoration:underline;
+  text-decoration-color:rgba(159,212,207,.4);text-underline-offset:5px;
+}
+.ft__nav a:hover{color:#fff;text-decoration-color:#fff}
+.ft__tag{
+  margin-top:28px;padding-top:22px;border-top:1px solid rgba(159,212,207,.22);
+  display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:baseline;
+  font-size:1rem;color:#9FD4CF;
+}
+.ft__tag strong{font-family:var(--fd);font-weight:400;font-size:1.25rem;color:var(--teal)}
+
+/* ==========================================================================
+   MOTION
+   Every rule is scoped under html.js, so with scripting disabled the page is
+   complete and nothing is hidden. Nothing moves more than 14px.
+   ========================================================================== */
+html.js .reveal{opacity:0;transform:translateY(14px)}
+html.js .reveal.in{
+  opacity:1;transform:none;
+  transition:opacity .5s var(--ease),transform .5s var(--ease);
+  transition-delay:calc(var(--i,0) * 90ms);
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;transition-delay:0ms!important;
+  }
+  /* Scoped to the animated transforms only — the struck-through rule and the
+     accordion mark are static decoration and must survive. */
+  html.js .reveal{opacity:1;transform:none}
+  .btn:hover{transform:none}
+}
+
+/* Not one shadow on this page. The floating rounded card with a soft shadow is
+   the template look; removing the ability to draw one removes the temptation. */
+*,*::before,*::after{box-shadow:none!important}
+
+@media print{
+  .hdr,.strip,.skip{display:none}
+  body{font-size:12pt}
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Icon set. One hand, one 24x24 grid, max five strokes each, drawn for a
+     40-56px render so it reads for 60-70 year old eyes. -->
+<svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="i-blocks">
+      <path d="M2 20.5H22"/>
+      <path d="M3 20.5V9.3a1.8 1.8 0 0 1 1.8-1.8h3.9a1.8 1.8 0 0 1 1.8 1.8V20.5"/>
+      <path d="M13.5 20.5V6.3a1.8 1.8 0 0 1 1.8-1.8h3.9a1.8 1.8 0 0 1 1.8 1.8V20.5"/>
+      <rect x="5.75" y="12" width="2" height="2" rx=".4" fill="currentColor" stroke="none"/>
+      <rect x="16.25" y="9" width="2" height="2" rx=".4" fill="currentColor" stroke="none"/>
+    </g>
+    <g id="i-continues">
+      <path d="M2.5 20.5H11"/>
+      <circle cx="11" cy="20.5" r="1.6" fill="currentColor" stroke="none"/>
+      <path d="M11 20.5 19 12.5"/>
+      <path d="M15.4 12.5H19v3.6"/>
+    </g>
+    <g id="i-door">
+      <path d="M2.5 20.5h19"/>
+      <path d="M7 20.5V5.6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2V20.5"/>
+      <circle cx="9.7" cy="12.5" r="1.25" fill="currentColor" stroke="none"/>
+    </g>
+    <g id="i-bench">
+      <path d="M2.5 20.5h19"/>
+      <rect x="4" y="6" width="16" height="2.6" rx="1.3"/>
+      <rect x="3" y="12" width="18" height="3" rx="1.5"/>
+      <path d="M7 8.6V20.5M17 8.6V20.5"/>
+    </g>
+    <g id="i-register">
+      <path d="M3 5h18M3 10h18M3 15h18"/>
+      <path d="M2.5 20h6M5.5 17v6"/>
+    </g>
+    <g id="i-train">
+      <circle cx="10" cy="9" r="5.5"/>
+      <path d="M8 14v3.6M12 14v3.6"/>
+      <path d="M14.2 13.2 20.4 19.4"/>
+      <path d="M19.1 20.8 21.8 18.1"/>
+    </g>
+    <g id="i-qualify">
+      <path d="M5 3.5h10L19.5 8v12.5H5Z"/>
+      <path d="M15 3.5V8h4.5"/>
+      <path d="M8.5 13.6 11 16.1 16 11.1"/>
+    </g>
+    <g id="i-deploy">
+      <rect x="2.5" y="16" width="19" height="3.2" rx="1.6"/>
+      <path d="M5 8v5.25a2.75 2.75 0 0 0 5.5 0V8"/>
+      <path d="M13.5 8v5.25a2.75 2.75 0 0 0 5.5 0V8"/>
+    </g>
+    <g id="i-lead">
+      <path d="M2.5 20.5h19"/>
+      <path d="M12 20.5V4.5"/>
+      <path d="M12 6h6.5l2 2-2 2H12"/>
+      <path d="M12 13H5.5l-2 2 2 2H12"/>
+    </g>
+    <g id="i-clock">
+      <circle cx="12" cy="12" r="8.6"/>
+      <path d="M12 5.8V12l-1.8 3.2"/>
+    </g>
+    <g id="i-route">
+      <path d="M4.5 17.5h5L14 13h5.5"/>
+      <circle cx="4.5" cy="17.5" r="1.75" fill="currentColor" stroke="none"/>
+      <circle cx="19.5" cy="13" r="2.6"/>
+    </g>
+    <g id="i-cup">
+      <path d="M8 7.5v6a3 3 0 0 0 6 0v-6"/>
+      <path d="M4.5 17.5h15"/>
+    </g>
+    <g id="i-arrow">
+      <path d="M3.5 12H19"/>
+      <path d="m14.5 7.5 4.5 4.5-4.5 4.5"/>
+    </g>
+    <g id="i-wa">
+      <path fill="currentColor" stroke="none" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.9-4.45 9.9-9.91C21.95 6.45 17.5 2 12.04 2Zm5.8 14.15c-.25.69-1.44 1.32-1.98 1.37-.54.05-1.04.24-3.5-.72-2.96-1.17-4.83-4.24-4.98-4.44-.14-.2-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.3.57-.37.76-.37h.55c.17 0 .41-.07.63.48.22.55.76 1.9.83 2.04.07.15.11.32.02.51-.1.2-.15.32-.29.5-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.44.3.15.47.13.65-.08.17-.2.74-.86.94-1.16.2-.3.4-.24.67-.15.27.1 1.7.8 1.99.95.29.15.48.22.55.34.07.13.07.74-.18 1.44Z"/>
+    </g>
+    <g id="cu-mark">
+      <path d="M203.66 51.84A107 107 0 1 0 203.66 203.16" fill="none" stroke="#3CBFB8" stroke-width="42"/>
+      <path d="M133.5 121v88a66 66 0 0 0 132 0v-88" fill="none" stroke="#EA5C2A" stroke-width="34"/>
+      <g mask="url(#cu-cmask)">
+        <path d="M133.5 121v88a66 66 0 0 0 132 0v-88" fill="none" stroke="#964E1E" stroke-width="34"/>
+      </g>
+    </g>
+    <mask id="cu-cmask" maskUnits="userSpaceOnUse" x="0" y="0" width="283" height="293">
+      <path d="M203.66 51.84A107 107 0 1 0 203.66 203.16" fill="none" stroke="#fff" stroke-width="42"/>
+    </mask>
+  </defs>
+</svg>
+
+<header class="hdr" id="hdr">
+  <div class="shell shell--wide hdr__in">
+    <a class="logo" href="#top" aria-label="Community Unlimited — top of page">
+      <svg viewBox="0 0 283 293" aria-hidden="true"><use href="#cu-mark"/></svg>
+      <b>Community<br>Unlimited</b>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#who">Why people come</a>
+      <a href="#purpose">What we are for</a>
+      <a href="#pathway">The pathway</a>
+      <a href="#whatson">This week</a>
+      <a href="#join">Join</a>
+    </nav>
+    <a class="btn btn--go btn--sm" href="#join">Message us</a>
+  </div>
+</header>
+
+<!-- Mobile navigation. A scrolling anchor strip rather than a drawer, because
+     a drawer needs JavaScript and this page must work without it. -->
+<nav class="strip" aria-label="Sections">
+  <ul role="list">
+    <li><a href="#who">Why people come</a></li>
+    <li><a href="#purpose">What we are for</a></li>
+    <li><a href="#pathway">The pathway</a></li>
+    <li><a href="#whatson">This week</a></li>
+    <li><a href="#who-else">For families</a></li>
+    <li><a href="#join">Join</a></li>
+  </ul>
+</nav>
+
+<main id="main">
+
+  <!-- =====================================================================
+       HERO — C1 wider, C2 heading down ~10% and locked to two lines,
+       C8 the full mobile note list.
+       ===================================================================== -->
+  <section class="hero" id="top" aria-labelledby="hero-h">
+    <div class="hero__grid">
+      <figure class="plate plate--warm hero__plate">
+        <span class="plate__img">
+          <img src="https://community-unlimited-landing-page.vercel.app/assets/hero.webp"
+               width="1200" height="800" fetchpriority="high" decoding="async"
+               alt="An older woman and a younger woman laughing together at a neighbourhood gathering">
+        </span>
+      </figure>
+
+      <div class="hero__panel onDark">
+        <p class="mast-rule"><span>Boon Lay · Free to join</span></p>
+        <!-- H1-LINE-2: recommended wording. It has to stand on its own —
+             an earlier draft read "So we are asking.", which dangles above the
+             sentence that gives it its reason. Alternates worth reading aloud
+             before this ships: "You stopped being asked." / "We are asking." /
+             "Your neighbourhood is asking." -->
+        <h1 class="h1" id="hero-h">
+          <span class="lede">Community Unlimited</span>
+          <span class="turn">Boon Lay is asking.</span>
+        </h1>
+        <p class="hero__sub">You did not stop being useful. You stopped being asked.</p>
+        <div class="hero__cta">
+          <!-- WA_HREF — placeholder number, carried over unchanged from the live page -->
+          <a class="btn btn--go" href="https://wa.me/6580000000?text=Hi%2C%20I%20saw%20the%20Community%20Unlimited%20page.%20Can%20you%20tell%20me%20what%27s%20on%20this%20week%20and%20where%20to%20meet%3F%20Thank%20you.">
+            <svg class="ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wa"/></svg>
+            Message us on WhatsApp
+          </a>
+          <a class="btn btn--gd" href="#whatson">See what runs this week</a>
+        </div>
+        <p class="hero__note">Free. Nothing to buy.</p>
+      </div>
+    </div>
+    <div class="shell shell--wide">
+      <p class="hero__resident">Run by residents of Boon Lay. Nobody was sent in to look after anyone.</p>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       WHY PEOPLE COME — C6. This was the "Who it's for" section sitting
+       seventh on the live page. It is now third, and rewritten as the three
+       states the founder named rather than a Primary/Secondary/Tertiary
+       table. Second person throughout: we have no real quotes, so nothing
+       here is set in quotation marks or attributed to anybody.
+       ===================================================================== -->
+  <section class="sec sec--wash" id="who" aria-labelledby="who-h">
+    <span id="about" aria-hidden="true"></span>
+    <div class="shell railed">
+      <p class="folio" aria-hidden="true">01 / Why people come</p>
+      <div class="body">
+        <figure class="plate plate--warm who__plate reveal">
+          <span class="plate__img">
+            <img src="https://community-unlimited-landing-page.vercel.app/assets/who-seniors.webp"
+                 width="1400" height="600" loading="lazy" decoding="async"
+                 alt="An older man smiling among a group of younger residents">
+          </span>
+        </figure>
+
+        <div class="sec__head">
+          <p class="eyebrow">Three reasons people walk in</p>
+          <h2 class="h2" id="who-h">You will recognise one of these.</h2>
+          <div class="rule" aria-hidden="true"></div>
+        </div>
+
+        <div class="mindsets">
+          <div class="mindset reveal" style="--i:0">
+            <p class="mindset__lead">You were not finished. The date was somebody else&rsquo;s decision.</p>
+            <p>The neighbourhood needs people who can run a morning without being told how. Nothing about that expired on your last day.</p>
+            <a class="tlink" href="#pathway">Where this leads
+              <svg class="ic ic--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+          <div class="mindset reveal" style="--i:1">
+            <p class="mindset__lead">You have waited a long time for this. You are not looking for another job.</p>
+            <p>Nobody here is offering one. Start with the Saturday walk or the coffee counter. Anything more is yours to take or leave.</p>
+            <a class="tlink" href="#whatson">What runs this week
+              <svg class="ic ic--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+          <div class="mindset reveal" style="--i:2">
+            <p class="mindset__lead">Monday came round and the diary was empty.</p>
+            <p>There is a coffee counter that needs somebody on it. Take one morning, and from there to running it yourself is five steps.</p>
+            <a class="tlink" href="#join">How it starts
+              <svg class="ic ic--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+        </div>
+
+        <p class="also">Not retired yet but can see it coming: come and look now, while it is still your decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       WHAT WE ARE FOR — C4. The review deck sketched two options: four cards
+       with icons, or a photo beside an expandable list with icons. This is
+       the second, because four white cards with a number in a square is the
+       single most template-shaped object on the live page and it is exactly
+       what the reviewers called plastic. The icons from option one are kept
+       and stay visible whether a row is open or shut.
+       ===================================================================== -->
+  <section class="sec" id="purpose" aria-labelledby="purpose-h">
+    <div class="shell railed">
+      <p class="folio" aria-hidden="true">02 / What we are for</p>
+      <div class="body">
+        <div class="sec__head">
+          <p class="eyebrow">What we are for</p>
+          <h2 class="h2" id="purpose-h">There is work here.</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <p class="statement">Boon Lay does not need another place to sit. It needs people who can <em>run a morning</em>.</p>
+        </div>
+
+        <div class="purpose__grid">
+          <figure class="plate plate--warm purpose__plate reveal">
+            <span class="plate__img">
+              <img src="https://community-unlimited-landing-page.vercel.app/assets/who-partners.webp"
+                   width="800" height="1000" loading="lazy" decoding="async"
+                   alt="Three residents laughing together at a community event">
+            </span>
+          </figure>
+
+          <div>
+            <p class="lead muted measure" style="margin-bottom:28px">Rosters, teams, budgets, a difficult customer before nine in the morning. A Saturday walk, a coffee counter and a Wednesday afternoon each need someone steady holding them together. It is not a job, and it still has to be done properly.</p>
+
+            <div class="acc">
+              <details open>
+                <summary>
+                  <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-blocks"/></svg></span>
+                  <span>Contribute, don&rsquo;t attend.</span>
+                  <svg class="ic ic--sm toggle" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"/><path class="stem" d="M12 5v14"/>
+                  </svg>
+                </summary>
+                <div class="acc__body">
+                  <p>You come in to do something, not to be entertained. Pull the coffee, set the pace on the walk, keep the table talking.</p>
+                  <p>If friendships come, they come from working beside people. That was true at work too.</p>
+                </div>
+              </details>
+
+              <details>
+                <summary>
+                  <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-continues"/></svg></span>
+                  <span>The skill outlasted the job.</span>
+                  <svg class="ic ic--sm toggle" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"/><path class="stem" d="M12 5v14"/>
+                  </svg>
+                </summary>
+                <div class="acc__body">
+                  <p>Years of running shifts, chairing meetings, calming somebody down before the queue noticed.</p>
+                  <p>You might come to slow down. You might come because stopping did not suit you. Either one is useful here.</p>
+                </div>
+              </details>
+
+              <details>
+                <summary>
+                  <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-door"/></svg></span>
+                  <span>One door, and it is WhatsApp.</span>
+                  <svg class="ic ic--sm toggle" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"/><path class="stem" d="M12 5v14"/>
+                  </svg>
+                </summary>
+                <div class="acc__body">
+                  <p>No fees and nothing to buy. You message us, we send you where to meet, you turn up. We take your name at the session, and that is the whole of the paperwork.</p>
+                  <p>The meeting points come to you by message because they are still being confirmed.</p>
+                </div>
+              </details>
+
+              <details>
+                <summary>
+                  <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bench"/></svg></span>
+                  <span>No screening at the door.</span>
+                  <svg class="ic ic--sm toggle" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"/><path class="stem" d="M12 5v14"/>
+                  </svg>
+                </summary>
+                <div class="acc__body">
+                  <p>Retired, half retired, or still working with the end of it in sight. Nobody is turned away for what they did before, or asked what they used to earn.</p>
+                  <p>The Saturday walk is forty minutes and then breakfast. Start there.</p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       THE BAND — C3. Two changes were asked for: the caption box should end
+       where the title ends, and the section should carry a button to What's
+       on and one to Get involved. Both are here.
+       "Age is just a number" is also the single most-used line on Active
+       Ageing Centre banners in Singapore, and avoiding that feeling is the
+       whole brief — so it is struck through rather than shouted, and the
+       real line is set underneath at three times the size.
+       ===================================================================== -->
+  <figure class="band" aria-labelledby="band-h">
+    <img src="https://community-unlimited-landing-page.vercel.app/assets/band.webp"
+         width="1600" height="700" loading="lazy" decoding="async"
+         alt="Neighbours greeting each other with raised hands outside a block of flats">
+    <div class="shell band__in onDark">
+      <div class="band__set">
+        <p class="band__struck"><span class="vh">Crossed out: </span><s style="text-decoration:none">Age is just a number.</s></p>
+        <p class="band__real" id="band-h">Boon Lay is not counting your years. It is counting on you.</p>
+        <p class="band__cap">We keep a register of who is coming to a session. That is the difference between being welcome and being expected.</p>
+        <div class="band__cta">
+          <a class="btn btn--go" href="#whatson">See what runs this week</a>
+          <a class="btn btn--gd" href="#join">Get involved</a>
+        </div>
+      </div>
+    </div>
+  </figure>
+
+  <!-- =====================================================================
+       THE PATHWAY — C5 (an icon on every step, and the steps fading in one
+       by one on scroll) and C7 (on a phone the gradient rail runs down the
+       left alongside the steps instead of sitting as a bar above them).
+       ===================================================================== -->
+  <section class="sec sec--wash" id="pathway" aria-labelledby="path-h">
+    <span id="how" aria-hidden="true"></span>
+    <div class="shell railed">
+      <p class="folio" aria-hidden="true">03 / The pathway</p>
+      <div class="body">
+        <div class="sec__head">
+          <p class="eyebrow">Five steps, in order</p>
+          <h2 class="h2" id="path-h">From first message to running the morning.</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <p class="lead muted measure">You move when someone who has worked beside you says you are ready.</p>
+        </div>
+
+        <ol class="path" role="list">
+          <li class="step reveal" id="register" style="--i:0">
+            <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-register"/></svg></span>
+            <span class="step__n">STEP 01</span>
+            <h3>Register</h3>
+            <p>Message us on WhatsApp and tell us your name. We send back where to meet. Turn up without messaging and you are still welcome.</p>
+          </li>
+          <li class="step reveal" id="train" style="--i:1">
+            <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-train"/></svg></span>
+            <span class="step__n">STEP 02</span>
+            <h3>Train</h3>
+            <p>Training happens while you work, not in a classroom. On the coffee counter that is your first two shifts: the machine, the milk, the order things happen in.</p>
+          </li>
+          <li class="step reveal" id="qualify" style="--i:2">
+            <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-qualify"/></svg></span>
+            <span class="step__n">STEP 03</span>
+            <h3>Qualify</h3>
+            <p>Someone who has stood beside you signs off that you can hold the counter on your own. A person decides that, not software. There are no exams.</p>
+          </li>
+          <li class="step reveal" id="deploy" style="--i:3">
+            <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-deploy"/></svg></span>
+            <span class="step__n">STEP 04</span>
+            <h3>Deploy</h3>
+            <p>Now the morning is yours to run. You open the counter, you keep it moving, you make the calls that need making. The people who come in after you learn by watching.</p>
+          </li>
+          <li class="step reveal" id="lead" style="--i:4">
+            <span class="disc"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-lead"/></svg></span>
+            <span class="step__n">STEP 05</span>
+            <h3>Lead</h3>
+            <p>The senior roles are real. The titles are not decided yet. The first people through will name them, then hold them.</p>
+          </li>
+        </ol>
+
+        <p class="note">How long it takes depends on how often you come.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       THIS WEEK — the three sessions the movement already publishes, at the
+       times it already publishes. Nothing here is invented.
+       ===================================================================== -->
+  <section class="sec" id="whatson" aria-labelledby="on-h">
+    <div class="shell railed">
+      <p class="folio" aria-hidden="true">04 / This week</p>
+      <div class="body">
+        <div class="sec__head">
+          <p class="eyebrow">Same times, every week</p>
+          <h2 class="h2" id="on-h">Three things running now</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <p class="lead muted measure">Turn up to one and see for yourself whether it is for you.</p>
+        </div>
+
+        <ul class="grid3" role="list">
+          <li class="ev reveal" style="--i:0">
+            <figure class="plate plate--warm ev__ph">
+              <span class="plate__img">
+                <img src="https://community-unlimited-landing-page.vercel.app/assets/ev-walk.webp"
+                     width="640" height="400" loading="lazy" decoding="async"
+                     alt="A group of residents exercising together outside their block in the morning">
+              </span>
+            </figure>
+            <div class="ev__body">
+              <p class="ev__when"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-route"/></svg>Every Sat, 7am</p>
+              <h3 class="h3">Neighbourhood Morning Walk</h3>
+              <p>Forty minutes around the estate, then breakfast. You set the pace.</p>
+              <p class="ev__note">Already know where we meet? Just turn up.</p>
+              <a class="btn btn--g btn--sm" href="#join">Message us on WhatsApp</a>
+            </div>
+          </li>
+
+          <li class="ev reveal" style="--i:1">
+            <figure class="plate plate--warm ev__ph">
+              <span class="plate__img">
+                <img src="https://community-unlimited-landing-page.vercel.app/assets/ev-barista.webp"
+                     width="640" height="400" loading="lazy" decoding="async"
+                     alt="Residents working together at a table at a community activity">
+              </span>
+            </figure>
+            <div class="ev__body">
+              <p class="ev__when"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>Tue &amp; Thu, 9am to 12pm</p>
+              <h3 class="h3">Community Barista shift</h3>
+              <p>Learn the machine, then pull coffee for the morning crowd. Three hours on your feet, serving people who live on your street.</p>
+              <p class="ev__note">Training happens on the first two shifts.</p>
+              <a class="btn btn--g btn--sm" href="#join">Message us on WhatsApp</a>
+            </div>
+          </li>
+
+          <li class="ev reveal" style="--i:2">
+            <figure class="plate plate--warm ev__ph">
+              <span class="plate__img">
+                <img src="https://community-unlimited-landing-page.vercel.app/assets/ev-kopi.webp"
+                     width="640" height="400" loading="lazy" decoding="async"
+                     alt="Neighbours sitting together and chatting in a bright common space">
+              </span>
+            </figure>
+            <div class="ev__body">
+              <p class="ev__when"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-cup"/></svg>Every Wed, 3pm</p>
+              <h3 class="h3">Kopi &amp; Catch-up</h3>
+              <p>Sit down, talk, meet the block. This is where you find out what the neighbourhood needs and who else is around to do it.</p>
+              <p class="ev__note">Nothing to prepare. Come once, and come back only if you want to.</p>
+              <a class="btn btn--g btn--sm" href="#join">Message us on WhatsApp</a>
+            </div>
+          </li>
+        </ul>
+
+        <p class="lookfirst">Come and look first.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       WHO ELSE — the secondary and tertiary audiences from the live page.
+       Kept, but deliberately low and deliberately light, so a daughter or a
+       funder has somewhere real to land without taking the top of the page
+       away from the person we are actually asking.
+       ===================================================================== -->
+  <section class="sec sec--quiet sec--wash" id="who-else" aria-labelledby="whoelse-h">
+    <div class="shell railed">
+      <p class="folio" aria-hidden="true">05 / Everyone else</p>
+      <div class="body">
+        <div class="sec__head">
+          <p class="eyebrow">Reading this for someone else</p>
+          <h2 class="h2" id="whoelse-h">Then this part is for you</h2>
+          <div class="rule" aria-hidden="true"></div>
+        </div>
+
+        <div class="whoelse">
+          <div>
+            <p class="tag">Families and care networks</p>
+            <h3>If you are reading this for your father or your mother</h3>
+            <p>Send them the page. Let them send the first message themselves. If you want to understand it first, ask us yourself.</p>
+            <a class="tlink" href="#join">Message us on WhatsApp
+              <svg class="ic ic--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+
+          <div>
+            <p class="tag">Stakeholders and partners</p>
+            <h3>If you run something in the neighbourhood</h3>
+            <p>This is residents organising themselves, not a service being delivered to anyone. If you work nearby and want to know how it sits alongside what you already run, ask us.</p>
+            <a class="tlink" href="#join">Message us on WhatsApp
+              <svg class="ic ic--sm" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       JOIN
+       ===================================================================== -->
+  <section class="join onDark" id="join" aria-labelledby="join-h">
+    <div class="shell join__g">
+      <div>
+        <p class="eyebrow eyebrow--d">WhatsApp is the front door</p>
+        <h2 class="h2" id="join-h">This is the asking part.</h2>
+        <div class="rule" aria-hidden="true"></div>
+        <p class="join__lede">Message us and we send you where to meet. Come once and see for yourself.</p>
+
+        <p class="bubble__label">The message we send for you</p>
+        <p class="bubble">Hi, I saw the Community Unlimited page. Can you tell me what&rsquo;s on this week and where to meet? Thank you.</p>
+
+        <div class="join__cta">
+          <!-- WA_HREF — the button payload and the bubble above are the same
+               sentence. Change both together, or they drift. -->
+          <a class="btn btn--go" href="https://wa.me/6580000000?text=Hi%2C%20I%20saw%20the%20Community%20Unlimited%20page.%20Can%20you%20tell%20me%20what%27s%20on%20this%20week%20and%20where%20to%20meet%3F%20Thank%20you.">
+            <svg class="ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wa"/></svg>
+            Message us on WhatsApp
+          </a>
+          <!-- TEL_HREF — placeholder, unchanged from the live page -->
+          <a class="btn btn--gd" href="tel:+6580000000">Or call 8000 0000</a>
+        </div>
+      </div>
+
+      <dl class="facts">
+        <div>
+          <dt>What it costs</dt>
+          <dd>Nothing. No fees, nothing to buy, and nobody asks you for a donation.</dd>
+        </div>
+        <div>
+          <dt>How you get in</dt>
+          <dd>WhatsApp. If you already know where we meet, you can just turn up.</dd>
+        </div>
+        <div>
+          <dt>Where to meet</dt>
+          <dd>We send you the meeting point when you message. The blocks are still being confirmed.</dd>
+        </div>
+        <div>
+          <dt>What we keep</dt>
+          <dd>A register of who is coming to a session.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+</main>
+
+<footer class="ft onDark">
+  <div class="shell">
+    <div class="ft__g">
+      <div>
+        <h2>Who runs this</h2>
+        <p>Community Unlimited is run by the people who live in Boon Lay. Free to join, and open to anyone here who wants a hand in running it.</p>
+      </div>
+      <nav class="ft__nav" aria-label="Footer">
+        <a href="#who">Why people come</a>
+        <a href="#purpose">What we are for</a>
+        <a href="#pathway">The pathway</a>
+        <a href="#whatson">This week</a>
+        <a href="#join">Join</a>
+      </nav>
+    </div>
+    <div class="ft__tag">
+      <span>Boon Lay, Singapore</span>
+      <strong>Think older. Feel younger.</strong>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* --------------------------------------------------------------------------
+   Everything below is enhancement. The stylesheet only hides a .reveal once
+   html.js is set, so with scripting off the page is complete and visible.
+   -------------------------------------------------------------------------- */
+(function () {
+  var root = document.documentElement;
+  var items = [].slice.call(document.querySelectorAll('.reveal'));
+
+  function revealAll() {
+    items.forEach(function (el) { el.classList.add('in'); });
+  }
+
+  // A reduced-motion visitor never depends on a callback firing to see
+  // content: we simply never hide anything.
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !('IntersectionObserver' in window)) {
+    revealAll();
+  } else {
+    root.className += ' js';
+    try {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+      items.forEach(function (el) { io.observe(el); });
+      // Belt and braces: if anything above misbehaves, nothing stays hidden.
+      setTimeout(revealAll, 2500);
+    } catch (err) {
+      revealAll();
+    }
+  }
+
+  // The masthead grows its hairline only once the page has moved.
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () {
+    hdr.classList.toggle('scrolled', window.scrollY > 24);
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>
+</body>
+</html>

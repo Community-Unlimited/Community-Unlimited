@@ -35,6 +35,12 @@ def spa_root():
     (root / "assets" / "index-abc123.js").write_text("console.log('bundle')", encoding="utf-8")
     (root / "logo-cu.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
+    # A standalone page copied verbatim from public/ — the shape /QA uses.
+    (root / "QA").mkdir()
+    (root / "QA" / "index.html").write_text(
+        "<!doctype html><title>QA preview</title>", encoding="utf-8"
+    )
+
     # A file OUTSIDE the static root — nothing served should ever reach it.
     (base / "outside-the-root.txt").write_text("must never be served", encoding="utf-8")
 
@@ -88,6 +94,26 @@ def test_root_level_file_is_served(spa_client: TestClient) -> None:
 def test_client_routes_fall_back_to_index(spa_client: TestClient, route: str) -> None:
     """A hard refresh on a client-side route must still boot the app."""
     r = spa_client.get(route)
+    assert r.status_code == 200
+    assert "CU-OS" in r.text
+
+
+@pytest.mark.parametrize("route", ["/QA", "/QA/", "/QA/index.html"])
+def test_standalone_page_beats_the_spa_fallback(spa_client: TestClient, route: str) -> None:
+    """A directory in the build answers with its own index.html.
+
+    /QA is a self-contained static page, not a client-side route. Without the
+    directory-index step it would fall through to the SPA shell and the shared
+    link would render the app instead of the page.
+    """
+    r = spa_client.get(route)
+    assert r.status_code == 200
+    assert "QA preview" in r.text
+
+
+def test_directory_without_an_index_still_falls_back(spa_client: TestClient) -> None:
+    """assets/ has no index.html, so it stays a client-side route, not a 404."""
+    r = spa_client.get("/assets")
     assert r.status_code == 200
     assert "CU-OS" in r.text
 

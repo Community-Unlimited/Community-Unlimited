@@ -99,8 +99,15 @@ def _mount_spa(app: FastAPI, static_dir: str) -> None:
             # Containment check, not a prefix check on the raw path: `..`
             # segments resolve away first, so this is what actually stops a
             # traversal like /../../etc/passwd from escaping the static root.
-            if candidate.is_file() and candidate.is_relative_to(root):
-                return FileResponse(candidate)
+            if candidate.is_relative_to(root):
+                if candidate.is_file():
+                    return FileResponse(candidate)
+                # A directory answers with its own index.html. Without this, a
+                # standalone page dropped into the build (public/QA/index.html)
+                # would be swallowed by the SPA fallback below and never seen.
+                nested = candidate / "index.html"
+                if nested.is_file():
+                    return FileResponse(nested)
 
         # Anything else is a client-side route (/people, /events, …).
         return FileResponse(index)
