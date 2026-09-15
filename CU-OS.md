@@ -160,6 +160,23 @@ python scripts/twilio_setup.py --create     # create + submit for approval
 python scripts/twilio_setup.py --recreate   # after a rejection
 ```
 
+One real send, through the app's own provider stack rather than a standalone
+Twilio snippet — so it covers settings loading, provider selection, the
+Meta-body-to-Twilio translation and the ContentSid lookup, which is where
+first-run failures actually are:
+
+```bash
+python scripts/whatsapp_smoke_test.py --to +65XXXXXXXX --dry-run  # build only
+python scripts/whatsapp_smoke_test.py --to +65XXXXXXXX            # invite template
+python scripts/whatsapp_smoke_test.py --to +65XXXXXXXX --text ping  # session message
+```
+
+It touches no database — no person, consent or outbox row — so it is safe
+against a production database and needs no seeding against an empty one. The
+queue/dedupe/flush path is covered by `POST /api/events/{id}/invite` instead.
+It refuses to run under `CU_WHATSAPP_PROVIDER=fake`, which would otherwise
+report a `wamid.fake.*` id and read exactly like a successful send.
+
 Four things about this integration are load-bearing:
 
 - **The ContentSid is looked up by name, not pinned.** A rejected WhatsApp
@@ -184,6 +201,26 @@ The Twilio **sandbox** sender (`whatsapp:+14155238886`) needs each recipient
 to send its join code first, and business-initiated templates need an approved
 WhatsApp sender. Inside the 24-hour session window a quick-reply template
 sends without approval, which is what makes the sandbox testable today.
+
+End to end against the sandbox:
+
+1. From the recipient's phone, WhatsApp the join code to `+1 415 523 8886`.
+   The join lapses after **72 hours of inactivity** and has to be repeated —
+   a previously working send failing with `63015` is almost always this.
+2. `python scripts/twilio_setup.py --create` to put `cu_event_invite` on the
+   account. The approval request fails on a sandbox account; that is expected
+   and does not stop the send, because the lookup falls back to the newest
+   unapproved template and the session window accepts it.
+3. Fill `CU_TWILIO_*` in `backend/.env`, set `CU_WHATSAPP_PROVIDER=twilio`.
+4. `python scripts/whatsapp_smoke_test.py --to +65XXXXXXXX`.
+
+Two consequences of switching off `fake` that surprise people: `/api/dev/*`
+unmounts entirely (it is mounted only under the fake provider), so the reply
+simulator and `POST /api/dev/flush-outbox` return 404 — send for real with
+`POST /api/events/{id}/invite` and `{"send_now": true}`; and a Twilio SID
+comes back for a message WhatsApp may still never deliver, so without
+`CU_TWILIO_STATUS_CALLBACK_URL` an undelivered send is indistinguishable from
+a working one.
 
 ### Meta
 
