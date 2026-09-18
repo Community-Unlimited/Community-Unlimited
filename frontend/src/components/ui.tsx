@@ -119,6 +119,9 @@ export function StatTile({
   caption,
   severity,
   chip,
+  icon,
+  linkLabel,
+  onLinkClick,
 }: {
   label: string;
   value: number | string;
@@ -126,10 +129,20 @@ export function StatTile({
   caption?: string;
   severity?: Severity;
   chip?: string;
+  /** Rendered in a tinted circle above the label — a quick visual anchor per tile. */
+  icon?: ReactNode;
+  /** Paired with `onLinkClick`: a "Label →" affordance under the chip. */
+  linkLabel?: string;
+  onLinkClick?: () => void;
 }) {
   return (
     <div className="flex flex-col justify-between gap-4 rounded-2xl border border-cu-border bg-cu-panel p-5 shadow-[0_1px_3px_rgba(31,42,46,.07)]">
       <div>
+        {icon && (
+          <span className="mb-3 flex size-10 items-center justify-center rounded-full bg-cu-teal-tint text-cu-teal-ink">
+            {icon}
+          </span>
+        )}
         <p className="text-cu-body font-semibold text-cu-ink">{label}</p>
         {caption && (
           <p className="mt-1 text-cu-caption text-cu-body-text">{caption}</p>
@@ -151,6 +164,16 @@ export function StatTile({
           >
             {chip}
           </span>
+        )}
+        {linkLabel && onLinkClick && (
+          <button
+            type="button"
+            onClick={onLinkClick}
+            className="tap-target -ml-1 mt-1 inline-flex items-center gap-1 px-1 text-cu-body font-bold text-cu-teal-ink hover:underline"
+          >
+            {linkLabel}
+            <span aria-hidden="true">→</span>
+          </button>
         )}
       </div>
     </div>

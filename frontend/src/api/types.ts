@@ -138,3 +138,10 @@ export interface PendingQualification {
   module_name: string;
   achieved_at: string | null;
 }
+
+export interface CurrentUser {
+  id: number;
+  email: string;
+  full_name: string;
+  role: string;
+}
