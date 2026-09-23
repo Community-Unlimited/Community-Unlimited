@@ -49,7 +49,7 @@ Drop `--demo` to seed reference data without the six fake people.
 | Qualification rule engine with human approval + audited overrides | ✅ |
 | Launch Control — derives the capacity gap | ✅ |
 | Asset registry + 12-point Site Ready Gate | ✅ structure only |
-| WhatsApp invite / acknowledgment | ✅ offline seam + live Twilio transport |
+| WhatsApp invite / acknowledgment | ✅ offline seam + live Twilio transport + WAHA stop-gap |
 | Rostering, partners, programmes, equipment, incidents, impact | ⬜ modelled or deferred |
 
 ### The chain that works end to end
@@ -114,7 +114,7 @@ reason to store a frailty label. There is no such field.
 
 ## WhatsApp
 
-Three transports, **one message shape**. `app/whatsapp/templates.py` renders
+Four transports, **one message shape**. `app/whatsapp/templates.py` renders
 the Meta Cloud API body, and that is what every provider receives and what
 `outbound_messages.payload` stores, whichever transport is live:
 
@@ -123,6 +123,7 @@ the Meta Cloud API body, and that is what every provider receives and what
 | `fake` (default) | none | Renders the real body, no network. Mounts `/api/dev`. |
 | `cloud` | Meta WhatsApp Cloud API | Posts the body verbatim. |
 | `twilio` | Twilio WhatsApp | Translates the body to `ContentSid` + `ContentVariables`. |
+| `waha` | Self-hosted WAHA, linked device | Stop-gap. The invite becomes a poll. See below. |
 
 Keeping one canonical shape in the database means switching provider does not
 split `payload` into two dialects that every later reader has to branch on,
@@ -185,6 +186,52 @@ to send its join code first, and business-initiated templates need an approved
 WhatsApp sender. Inside the 24-hour session window a quick-reply template
 sends without approval, which is what makes the sandbox testable today.
 
+### WAHA (stop-gap until Meta verification clears)
+
+[WAHA](https://waha.devlike.pro) is a self-hosted container that logs in to an
+**ordinary WhatsApp number as a linked device**, the same way WhatsApp Web
+does. The phone keeps working normally, so staff can still chat from it. It
+needs no Meta or Twilio account, which is the whole point: it runs while
+business verification is pending.
+
+Non-Business accounts cannot send quick-reply buttons, so the `cu_event_invite`
+body is sent as a **single-choice poll** whose options are the button labels
+(`Yes, I'll come` / `Can't make it` / `Maybe`). A vote arrives on
+`POST /api/whatsapp/waha/webhook` and is rewritten into the same `ack_*` button
+reply the Meta handler records, so acknowledgments, change-of-mind and
+dedupe behave identically. Changing a vote updates the answer; retracting one
+leaves it alone.
+
+Setup on Render (`render.yaml` defines the `cu-os-waha` service and wires its
+URL, API key and HMAC key into the app):
+
+1. Deploy the blueprint, then set `WHATSAPP_HOOK_URL` on `cu-os-waha` to
+   `https://<app>/api/whatsapp/waha/webhook`.
+2. Open `https://cu-os-waha.onrender.com/dashboard` (user `admin`, password
+   in `WAHA_DASHBOARD_PASSWORD`) and scan the QR code from the phone:
+   *WhatsApp → Linked devices → Link a device*.
+3. Set `CU_WHATSAPP_PROVIDER=waha` on `cu-os-api`.
+
+Load-bearing details:
+
+- **This is against WhatsApp's terms and the number can be banned**, with no
+  appeal. Bulk messages to people who have never messaged the number are
+  what triggers it. Keep `CU_WAHA_SEND_INTERVAL_SECONDS` (default 3) and ask
+  registrants to message the number first. Switch to `cloud` the day Meta
+  approves.
+- **The operator's own messages and votes are dropped** (`fromMe`), or a tap
+  on the phone would acknowledge on a member's behalf.
+- **Chat from unregistered numbers is never stored.** The number is also a
+  personal phone.
+- **The webhook refuses (503) until `CU_WAHA_WEBHOOK_HMAC_KEY` is set.** WAHA
+  signs the raw body with HMAC-SHA512 in `X-Webhook-Hmac`.
+- **`provider_message_id` is the bare WhatsApp key id**, not WAHA's
+  `true_<chat>_<id>`: a vote can name the poll's chat as an `@lid` privacy id
+  rather than the `@c.us` number it was sent to. An `@lid` voter is resolved
+  through that poll's outbound row, then WAHA's LID lookup.
+- **Keep the phone online.** Linked devices are logged out if the phone has
+  not connected for about 14 days.
+
 ### Meta
 
 Set `CU_WHATSAPP_PROVIDER=cloud` plus the four `CU_WHATSAPP_*` credentials and
@@ -219,8 +266,8 @@ backend/
   app/
     models/        base.py has UtcDateTime + the naming convention
     services/      calendar · qualification · launch_control · audit
-    whatsapp/      provider (fake|cloud|twilio) · templates · outbox
-                   webhook_handler (Meta) · twilio_webhook · twilio_content
+    whatsapp/      provider (fake|cloud|twilio|waha) · templates · outbox
+                   webhook_handler (Meta) · twilio_webhook · twilio_content · waha_webhook
     api/           auth · public · people · academy · assets · launch · whatsapp · dev
   alembic/         render_as_batch + render_item hook for UtcDateTime
   tests/           146 tests

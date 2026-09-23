@@ -1,8 +1,12 @@
-# Render blueprint — ONE service for the whole app.
+# Render blueprint — ONE service for the whole app, plus the optional WAHA
+# WhatsApp bridge (cu-os-waha, at the bottom).
 #
 # The root Dockerfile builds the React SPA and copies it into the Python image,
 # which serves it from the same origin as /api. That means no CORS, no
 # VITE_API_BASE_URL, one URL and one thing to pay for.
+#
+# cu-os-waha is a second Starter instance with its own disk. Delete that
+# service (and the three CU_WAHA_* entries) once Meta's Cloud API is live.
 #
 # No CLI needed: in the Render dashboard choose New > Blueprint and point it at
 # this repo.
@@ -85,3 +89,68 @@ services:
         sync: false
       - key: CU_TWILIO_CONTENT_SID_EVENT_INVITE
         sync: false
+      # --- WAHA (set CU_WHATSAPP_PROVIDER=waha to activate) ---------------
+      # Wired to the cu-os-waha service below over Render's private network,
+      # sharing the secrets it generates. Nothing to paste by hand.
+      - key: CU_WAHA_BASE_URL
+        fromService:
+          type: web
+          name: cu-os-waha
+          property: hostport
+      - key: CU_WAHA_API_KEY
+        fromService:
+          type: web
+          name: cu-os-waha
+          envVarKey: WAHA_API_KEY
+      - key: CU_WAHA_WEBHOOK_HMAC_KEY
+        fromService:
+          type: web
+          name: cu-os-waha
+          envVarKey: WHATSAPP_HOOK_HMAC_KEY
+
+  # WAHA: WhatsApp over an ordinary number, logged in as a linked device.
+  # A STOP-GAP while Meta business verification is pending — it is against
+  # WhatsApp's terms and the number can be banned. Scan the QR code once at
+  # https://cu-os-waha.onrender.com/dashboard (user admin, password in this
+  # service's WAHA_DASHBOARD_PASSWORD). The session lives on the disk, so
+  # redeploys do not ask for the QR code again.
+  - type: web
+    name: cu-os-waha
+    runtime: image
+    image:
+      # GOWS decrypts poll votes itself; the default WEBJS image needs a
+      # whole Chromium, and NOWEB needs its message store switched on for
+      # votes to arrive at all.
+      url: docker.io/devlikeapro/waha:gows
+    region: singapore
+    plan: starter
+    # One WhatsApp session, one process. Never scale this out.
+    numInstances: 1
+    healthCheckPath: /ping
+    disk:
+      name: waha-sessions
+      mountPath: /app/.sessions
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: WHATSAPP_API_PORT
+        value: "3000"
+      - key: WHATSAPP_DEFAULT_ENGINE
+        value: GOWS
+      - key: WHATSAPP_START_SESSION
+        value: default
+      - key: WAHA_API_KEY
+        generateValue: true
+      - key: WAHA_DASHBOARD_USERNAME
+        value: admin
+      - key: WAHA_DASHBOARD_PASSWORD
+        generateValue: true
+      # The public URL of the app's WAHA webhook, e.g.
+      #   https://cu-os-api.onrender.com/api/whatsapp/waha/webhook
+      - key: WHATSAPP_HOOK_URL
+        sync: false
+      - key: WHATSAPP_HOOK_EVENTS
+        value: poll.vote,message
+      - key: WHATSAPP_HOOK_HMAC_KEY
+        generateValue: true
