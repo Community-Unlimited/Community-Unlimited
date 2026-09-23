@@ -44,7 +44,8 @@ class Settings(BaseSettings):
 
     # WhatsApp transport. "fake" keeps the whole app runnable with no
     # credentials at all; "cloud" is Meta's WhatsApp Cloud API; "twilio" is
-    # Twilio's WhatsApp channel. See app/whatsapp/provider.py.
+    # Twilio's WhatsApp channel; "waha" is a self-hosted linked-device bridge
+    # that sends invites as polls. See app/whatsapp/provider.py.
     whatsapp_provider: str = "fake"
     whatsapp_phone_number_id: str = ""
     whatsapp_access_token: str = ""
@@ -78,12 +79,28 @@ class Settings(BaseSettings):
     # approval (which mints a *new* SID) needs no config change.
     twilio_content_sid_event_invite: str = ""
 
+    # --- WAHA (unofficial, linked-device) -----------------------------------
+    # A self-hosted WAHA container (https://waha.devlike.pro) logged in to an
+    # ordinary WhatsApp number as a *linked device*, the way WhatsApp Web is.
+    # The phone keeps working normally. This is a stop-gap while Meta business
+    # verification is pending: it is against WhatsApp's terms, and the number
+    # can be banned for bulk sending. See app/whatsapp/waha_webhook.py.
+    waha_base_url: str = ""
+    waha_api_key: str = ""
+    waha_session: str = "default"
+    # Must equal WHATSAPP_HOOK_HMAC_KEY on the WAHA container. Inbound webhooks
+    # are refused (503) until it is set, never accepted unsigned.
+    waha_webhook_hmac_key: str = ""
+    # Pause after every send. Bursts of messages to new contacts are what gets
+    # an unofficial number banned, so this errs slow.
+    waha_send_interval_seconds: float = 3.0
+
     @field_validator("whatsapp_provider")
     @classmethod
     def _known_provider(cls, v: str) -> str:
         # Fail loudly. Falling back to "fake" on a typo means every invite is
         # silently discarded in production with a 200 and no error anywhere.
-        allowed = {"fake", "cloud", "twilio"}
+        allowed = {"fake", "cloud", "twilio", "waha"}
         if v not in allowed:
             raise ValueError(
                 f"CU_WHATSAPP_PROVIDER={v!r} is not one of {sorted(allowed)}"

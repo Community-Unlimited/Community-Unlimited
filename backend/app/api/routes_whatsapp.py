@@ -1,10 +1,11 @@
 """WhatsApp webhooks.
 
-Two providers, two wire formats, one handler. Meta posts a signed JSON
+Three providers, three wire formats, one handler. Meta posts a signed JSON
 envelope to ``/api/whatsapp/webhook``; Twilio posts form fields to
-``/api/whatsapp/twilio/webhook``, which are rewritten into the same envelope
-so :func:`app.whatsapp.webhook_handler.handle_payload` stays the only place
-that knows what an acknowledgment means.
+``/api/whatsapp/twilio/webhook`` and WAHA posts its own JSON events to
+``/api/whatsapp/waha/webhook``. Both are rewritten into the Meta envelope so
+:func:`app.whatsapp.webhook_handler.handle_payload` stays the only place that
+knows what an acknowledgment means.
 """
 
 from __future__ import annotations
@@ -16,8 +17,9 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.deps import DbSession
-from app.models import OutboundMessage, utcnow
-from app.whatsapp import twilio_webhook, webhook_handler
+from app.models import OutboundMessage, Person, utcnow
+from app.whatsapp import twilio_webhook, waha_webhook, webhook_handler
+from app.whatsapp.provider import waha_from_settings
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
@@ -159,3 +161,80 @@ async def receive_twilio_status(request: Request, db: DbSession) -> Response:
         db.commit()
 
     return _twiml()
+
+
+# ---------------------------------------------------------------------------
+# WAHA (linked-device bridge)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/waha/webhook")
+async def receive_waha_webhook(request: Request, db: DbSession) -> dict[str, object]:
+    """A poll vote or an inbound message from the WAHA container.
+
+    Like Twilio, an unconfigured HMAC key is a 503, never a pass: this URL is
+    public and an unsigned body could otherwise record acknowledgments for
+    anyone.
+    """
+    settings = get_settings()
+    if not settings.waha_webhook_hmac_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="CU_WAHA_WEBHOOK_HMAC_KEY is not configured; webhook cannot be verified",
+        )
+
+    raw = await request.body()
+    if not waha_webhook.verify_signature(
+        raw,
+        request.headers.get("X-Webhook-Hmac"),
+        settings.waha_webhook_hmac_key,
+        request.headers.get("X-Webhook-Hmac-Algorithm"),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="bad waha signature"
+        )
+
+    try:
+        event = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="malformed JSON") from exc
+    if not isinstance(event, dict):
+        raise HTTPException(status_code=400, detail="expected a JSON object")
+
+    def resolve_wa_id(sender: str, poll_key: str | None) -> str | None:
+        wa_id = waha_webhook.wa_id_from_chat_id(sender)
+        if wa_id:
+            return wa_id
+        # An @lid voter. The poll went to exactly one person in a 1:1 chat,
+        # and the operator's own votes are already dropped, so the outbound
+        # row names the voter without a network call.
+        if poll_key:
+            outbound = db.scalar(
+                select(OutboundMessage).where(
+                    OutboundMessage.provider_message_id == poll_key
+                )
+            )
+            if outbound is not None:
+                return outbound.to_wa_id
+        if sender.endswith("@lid") and settings.waha_base_url:
+            return waha_from_settings().phone_for_lid(sender)
+        return None
+
+    envelope = waha_webhook.to_meta_envelope(event, resolve_wa_id=resolve_wa_id)
+    if envelope is None:
+        return {"ignored": 1}
+
+    # The number is also someone's personal phone. Chat from anyone who is
+    # not a registered person is none of this database's business, so it is
+    # dropped before anything is stored.
+    if event.get("event") == "message":
+        message = envelope["entry"][0]["changes"][0]["value"]["messages"][0]
+        known = db.scalar(
+            select(Person.id).where(Person.phone_e164 == f"+{message['from']}")
+        )
+        if known is None:
+            return {"ignored": 1}
+
+    # Always 200 on a verified body: WAHA retries a non-2xx up to 15 times,
+    # and a replay is absorbed by the inbound dedupe anyway.
+    return webhook_handler.handle_payload(db, envelope)
