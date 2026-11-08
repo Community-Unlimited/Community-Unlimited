@@ -1,23 +1,25 @@
-"""WhatsApp webhooks.
+"""WhatsApp webhooks and admin session management.
 
-Two providers, two wire formats, one handler. Meta posts a signed JSON
-envelope to ``/api/whatsapp/webhook``; Twilio posts form fields to
-``/api/whatsapp/twilio/webhook``, which are rewritten into the same envelope
-so :func:`app.whatsapp.webhook_handler.handle_payload` stays the only place
-that knows what an acknowledgment means.
+Transports:
+- Oracle Cloud persistent WhatsApp Web bridge
+- Open WhatsApp (WAHA)
+- Meta WhatsApp Cloud API
+- Twilio WhatsApp channel
 """
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import select
 
 from app.config import get_settings
-from app.deps import DbSession
+from app.deps import CurrentStaff, DbSession
 from app.models import OutboundMessage, utcnow
-from app.whatsapp import twilio_webhook, webhook_handler
+from app.whatsapp import openwa_webhook, twilio_webhook, webhook_handler
+from app.whatsapp.oracle_client import OracleWhatsAppClient
 
 router = APIRouter(prefix="/api/whatsapp", tags=["whatsapp"])
 
@@ -28,6 +30,32 @@ EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response></Response>'
 
 def _twiml() -> Response:
     return Response(content=EMPTY_TWIML, media_type="application/xml")
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp Admin Management (Oracle VM Session Connect, QR & Status)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/admin/status")
+def get_whatsapp_admin_status(user: CurrentStaff) -> dict[str, Any]:
+    """Fetch live status of the WhatsApp session from the Oracle Cloud bridge."""
+    client = OracleWhatsAppClient()
+    return client.get_status()
+
+
+@router.post("/admin/connect")
+def connect_whatsapp_admin(user: CurrentStaff) -> dict[str, Any]:
+    """Start the WhatsApp session or request a fresh pairing QR code."""
+    client = OracleWhatsAppClient()
+    return client.connect()
+
+
+@router.post("/admin/disconnect")
+def disconnect_whatsapp_admin(user: CurrentStaff) -> dict[str, Any]:
+    """Disconnect session and remove profile to link a new WhatsApp account."""
+    client = OracleWhatsAppClient()
+    return client.disconnect()
 
 
 # ---------------------------------------------------------------------------
@@ -52,8 +80,6 @@ def verify_webhook(request: Request) -> Response:
 async def receive_webhook(request: Request, db: DbSession) -> dict[str, object]:
     settings = get_settings()
 
-    # The signature covers the bytes exactly as sent. Parsing to JSON and
-    # re-serialising produces different bytes and the HMAC will never match.
     raw = await request.body()
 
     if settings.whatsapp_app_secret:
@@ -70,8 +96,6 @@ async def receive_webhook(request: Request, db: DbSession) -> dict[str, object]:
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="malformed JSON") from exc
 
-    # Always 200 on a well-formed body: a non-200 makes Meta redeliver, and
-    # redelivery of an already-processed message is pure noise.
     return webhook_handler.handle_payload(db, payload)
 
 
@@ -81,13 +105,6 @@ async def receive_webhook(request: Request, db: DbSession) -> dict[str, object]:
 
 
 async def _validated_form(request: Request) -> dict[str, str]:
-    """Parse the form and prove Twilio sent it.
-
-    Refuses with 503 rather than 401 when no auth token is configured. The
-    distinction matters: an unconfigured service must never be mistaken for a
-    rejected caller, and validation is never skipped just because the key is
-    missing.
-    """
     settings = get_settings()
     if not settings.twilio_auth_token:
         raise HTTPException(
@@ -117,18 +134,14 @@ async def _validated_form(request: Request) -> dict[str, str]:
 
 @router.post("/twilio/webhook")
 async def receive_twilio_webhook(request: Request, db: DbSession) -> Response:
-    """Inbound message or quick-reply button press from Twilio."""
     params = await _validated_form(request)
     envelope = twilio_webhook.to_meta_envelope(params)
     webhook_handler.handle_payload(db, envelope)
-    # Always 200 on a validated body, for the same reason as Meta: Twilio
-    # retries on a non-2xx and the replay is absorbed anyway.
     return _twiml()
 
 
 @router.post("/twilio/status")
 async def receive_twilio_status(request: Request, db: DbSession) -> Response:
-    """Delivery receipt. Moves an outbound row forward, never backwards."""
     params = await _validated_form(request)
 
     message_sid = params.get("MessageSid") or params.get("SmsSid")
@@ -142,8 +155,6 @@ async def receive_twilio_status(request: Request, db: DbSession) -> Response:
         )
     )
     if message is None:
-        # A receipt for something this database never queued - a message sent
-        # from the Twilio console, say. Nothing to record.
         return _twiml()
 
     new_status = twilio_webhook.advance_status(message.status, twilio_status)
@@ -159,3 +170,34 @@ async def receive_twilio_status(request: Request, db: DbSession) -> Response:
         db.commit()
 
     return _twiml()
+
+
+# ---------------------------------------------------------------------------
+# Open WhatsApp (WAHA / Baileys)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/open/webhook")
+async def receive_open_whatsapp_webhook(
+    request: Request, db: DbSession
+) -> dict[str, object]:
+    settings = get_settings()
+
+    if settings.openwa_webhook_secret:
+        provided = (
+            request.headers.get("X-Webhook-Secret")
+            or request.headers.get("X-Api-Key")
+            or request.query_params.get("secret")
+        )
+        if provided != settings.openwa_webhook_secret:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="bad webhook secret"
+            )
+
+    try:
+        payload = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="malformed JSON") from exc
+
+    envelope = openwa_webhook.to_meta_envelope(payload)
+    return webhook_handler.handle_payload(db, envelope)

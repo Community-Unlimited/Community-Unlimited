@@ -95,3 +95,5 @@ ehthumbs.db
 *.log
 *.bak
 *.tmp
+test.py
+*.png

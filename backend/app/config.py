@@ -44,12 +44,24 @@ class Settings(BaseSettings):
 
     # WhatsApp transport. "fake" keeps the whole app runnable with no
     # credentials at all; "cloud" is Meta's WhatsApp Cloud API; "twilio" is
-    # Twilio's WhatsApp channel. See app/whatsapp/provider.py.
-    whatsapp_provider: str = "fake"
+    # Twilio's WhatsApp channel; "openwa" is Open WhatsApp (WAHA); "oracle"
+    # is Oracle Cloud persistent WhatsApp bridge.
+    # See app/whatsapp/provider.py.
+    whatsapp_provider: str = "oracle"
     whatsapp_phone_number_id: str = ""
     whatsapp_access_token: str = ""
     whatsapp_app_secret: str = ""
     whatsapp_verify_token: str = "cu-os-verify"
+
+    # --- Oracle Cloud WhatsApp Bridge ---------------------------------------
+    oracle_whatsapp_url: str = "https://whatsapp.rejey-services.tech"
+    oracle_whatsapp_token: str = "78651582e6fd5be5ed908fae6538cec500a2938abf22682a2fa2c73f01061143"
+    oracle_whatsapp_user_id: str = "4589accd-0f9d-46a6-96c0-c0d2044a77e6"
+
+    # --- Open WhatsApp (WAHA / Baileys) -------------------------------------
+    openwa_url: str = "http://localhost:3000"
+    openwa_api_key: str = ""
+    openwa_webhook_secret: str = ""
 
     # --- Twilio ------------------------------------------------------------
     # Sends prefer the API key pair (revocable without rotating the account
@@ -83,7 +95,7 @@ class Settings(BaseSettings):
     def _known_provider(cls, v: str) -> str:
         # Fail loudly. Falling back to "fake" on a typo means every invite is
         # silently discarded in production with a 200 and no error anywhere.
-        allowed = {"fake", "cloud", "twilio"}
+        allowed = {"fake", "cloud", "twilio", "openwa", "oracle"}
         if v not in allowed:
             raise ValueError(
                 f"CU_WHATSAPP_PROVIDER={v!r} is not one of {sorted(allowed)}"

@@ -1,30 +1,28 @@
-# Render blueprint — ONE service for the whole app.
+# Render blueprint — CU-OS App + Open WhatsApp Engine.
 #
 # The root Dockerfile builds the React SPA and copies it into the Python image,
 # which serves it from the same origin as /api. That means no CORS, no
 # VITE_API_BASE_URL, one URL and one thing to pay for.
 #
-# No CLI needed: in the Render dashboard choose New > Blueprint and point it at
-# this repo.
+# In the Render dashboard choose New > Blueprint and point it at this repo.
 #
-# PLAN: a persistent disk requires a paid instance (Starter, ~US$7/mo). On the
-# free plan there is no disk and the service sleeps after inactivity, so SQLite
-# data is lost on restart and the first webhook after a sleep times out. Free
-# is fine for a demo; not for real registrations.
+# PRICING BREAKDOWN:
+# - cu-os-api: Starter plan ($7/mo) + 1GB persistent disk ($0.25/mo)
+# - cuos-waha: Starter plan ($7/mo) + 1GB persistent disk ($0.25/mo)
+# Total: ~$14.50 / month (no per-message fees, no Meta template approval fees).
 
 services:
+  # --------------------------------------------------------------------------
+  # 1. CU-OS Application (FastAPI + React SPA)
+  # --------------------------------------------------------------------------
   - type: web
     name: cu-os-api
     runtime: docker
-    # Build context is the repo root — the image needs both frontend/ and
-    # backend/.
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: singapore
     plan: starter
     healthCheckPath: /api/health
-    # One instance only: the reminder sweep is an in-process loop and a second
-    # instance double-sends.
     numInstances: 1
     disk:
       name: cuos-data
@@ -33,24 +31,33 @@ services:
     envVars:
       - key: CU_DATABASE_URL
         value: sqlite:////data/cuos.db
-      # Set by the Dockerfile too; explicit here so it is visible in the
-      # dashboard.
       - key: CU_STATIC_DIR
         value: /app/static
+      # Set to 'openwa' to use Open WhatsApp, or 'fake' / 'twilio' / 'cloud'
       - key: CU_WHATSAPP_PROVIDER
-        value: fake
+        value: openwa
       - key: CU_JWT_SECRET
         generateValue: true
       - key: CU_ADMIN_EMAIL
         value: admin@communityunlimited.sg
-      # Set a real value in the dashboard — leaving this unset seeds the
-      # default password, which must never reach a public URL.
       - key: CU_ADMIN_PASSWORD
         sync: false
-      # Only needed if a separate frontend origin (e.g. Vercel) is kept.
-      # Same-origin serving needs no CORS at all.
       - key: CU_CORS_ORIGINS
         sync: false
+
+      # --- Open WhatsApp (WAHA) --------------------------------------------
+      # Internal private networking URL within Render Singapore region
+      - key: CU_OPENWA_URL
+        value: http://cuos-waha:3000
+      - key: CU_OPENWA_API_KEY
+        fromService:
+          type: web
+          name: cuos-waha
+          envVarKey: WAHA_API_KEY
+      - key: CU_OPENWA_WEBHOOK_SECRET
+        sync: false
+
+      # --- Meta WhatsApp Cloud API (optional fallback) -----------------------
       - key: CU_WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: CU_WHATSAPP_ACCESS_TOKEN
@@ -59,12 +66,10 @@ services:
         sync: false
       - key: CU_WHATSAPP_VERIFY_TOKEN
         sync: false
-      # --- Twilio (set CU_WHATSAPP_PROVIDER=twilio to activate) -------------
-      # All sync:false — secrets are entered in the dashboard, never here.
+
+      # --- Twilio (optional fallback) ----------------------------------------
       - key: CU_TWILIO_ACCOUNT_SID
         sync: false
-      # Required even when sends use the API key pair: inbound webhook
-      # signatures are keyed on the auth token and nothing else validates them.
       - key: CU_TWILIO_AUTH_TOKEN
         sync: false
       - key: CU_TWILIO_API_KEY_SID
@@ -73,15 +78,54 @@ services:
         sync: false
       - key: CU_TWILIO_WHATSAPP_FROM
         sync: false
-      # Set this to the deployed URL of the webhook, exactly as registered in
-      # the Twilio console — e.g.
-      #   https://cu-os-api.onrender.com/api/whatsapp/twilio/webhook
-      # Render terminates TLS, so a URL rebuilt from the request arrives as
-      # http:// and the signature check fails with a 401 that reads like bad
-      # credentials. Setting it explicitly removes that failure mode.
       - key: CU_TWILIO_WEBHOOK_URL
         sync: false
       - key: CU_TWILIO_STATUS_CALLBACK_URL
         sync: false
       - key: CU_TWILIO_CONTENT_SID_EVENT_INVITE
         sync: false
+
+  # --------------------------------------------------------------------------
+  # 2. Open WhatsApp Engine (WAHA - Baileys Core)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: cuos-waha
+    runtime: image
+    image:
+      url: devlikeapro/waha:latest
+    region: singapore
+    plan: starter
+    healthCheckPath: /dashboard
+    numInstances: 1
+    disk:
+      name: waha-data
+      mountPath: /app/.sessions
+      sizeGB: 1
+    envVars:
+      # NOWEB engine runs headless Baileys WebSocket (~90MB RAM footprint)
+      - key: WHATSAPP_DEFAULT_ENGINE
+        value: NOWEB
+      - key: WAHA_ZIPPA_ENABLED
+        value: "false"
+      - key: WAHA_DASHBOARD_ENABLED
+        value: "true"
+      - key: WAHA_API_KEY
+        generateValue: true
+      - key: WHATSAPP_HOOK_URL
+        value: https://cu-os-api.onrender.com/api/whatsapp/open/webhook
+      - key: WHATSAPP_HOOK_EVENTS
+        value: "message,message.any"
+
+      # --- Memory & Storage Protection for X Users -------------------------
+      # Keep V8 heap within Render 512MB container limit to avoid OOM crashes
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=384"
+      # Disable media downloads: CU-OS only processes text/RSVP messages, so
+      # avoid buffering photos, audio, or video into RAM or disk
+      - key: WAHA_EVENTS_DOWNLOAD_MEDIA
+        value: "false"
+      - key: WAHA_API_DOWNLOAD_MEDIA
+        value: "false"
+      # Clean up any transient files automatically after 60 seconds
+      - key: WHATSAPP_FILES_LIFETIME
+        value: "60"

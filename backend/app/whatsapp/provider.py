@@ -1,17 +1,15 @@
 """WhatsApp transport.
 
-``CU_WHATSAPP_PROVIDER=fake`` (the default) performs no network I/O at all, so
-the entire application - including the outbox, the webhook and acknowledgment
-handling - is exercisable offline and in CI with no credentials.
+``CU_WHATSAPP_PROVIDER=fake`` performs no network I/O at all, so the entire
+application - including the outbox, the webhook and acknowledgment handling -
+is exercisable offline and in CI with no credentials.
 
-Three transports, one message shape. :mod:`app.whatsapp.templates` renders the
-**Meta Cloud API body**, and that is what every provider receives and what the
-outbox stores, whichever transport is live. ``CloudProvider`` posts it
-verbatim; ``TwilioProvider`` translates it to Twilio's form-encoded API on the
-way out. Keeping one canonical shape in the database means switching provider
-does not split ``outbound_messages.payload`` into two dialects that every
-later reader has to branch on, and it keeps the fake provider representative
-of both.
+Transports include:
+- ``oracle``: Persistent WhatsApp Web bridge hosted on Oracle Cloud (default).
+- ``openwa``: Self-hosted WAHA (WhatsApp HTTP API).
+- ``cloud``: Meta WhatsApp Cloud API.
+- ``twilio``: Twilio WhatsApp channel.
+- ``fake``: In-memory test/dev recorder.
 """
 
 from __future__ import annotations
@@ -159,8 +157,6 @@ class TwilioProvider:
                 "CU_TWILIO_ACCOUNT_SID and CU_TWILIO_WHATSAPP_FROM are required "
                 "when CU_WHATSAPP_PROVIDER=twilio"
             )
-        # Prefer the API key pair: it can be revoked on its own, whereas
-        # rotating the auth token invalidates every other integration at once.
         if api_key_sid and api_key_secret:
             self._auth = (api_key_sid, api_key_secret)
         elif auth_token:
@@ -185,13 +181,6 @@ class TwilioProvider:
         return ""
 
     def build_request(self, payload: dict[str, Any]) -> dict[str, str]:
-        """Meta body -> Twilio form fields.
-
-        Raises ``ValueError`` on a shape it cannot express. :meth:`send`
-        catches that and records it on the outbound row, because the
-        alternative - posting a message with no body - delivers a blank
-        WhatsApp message to a real person and still reports success.
-        """
         recipient = payload.get("to")
         if not recipient:
             raise ValueError("payload has no recipient")
@@ -242,8 +231,6 @@ class TwilioProvider:
             )
 
         body = response.json()
-        # Twilio returns 201 for a message it has already given up on, so the
-        # status field decides whether this was a send, not the HTTP code.
         if body.get("status") == "failed" or body.get("error_code"):
             return SendResult(
                 ok=False,
@@ -257,6 +244,14 @@ _fake_singleton = FakeProvider()
 
 def get_provider() -> WhatsAppProvider:
     settings = get_settings()
+    if settings.whatsapp_provider == "oracle":
+        from app.whatsapp.oracle_provider import OracleWhatsAppProvider
+
+        return OracleWhatsAppProvider(
+            base_url=settings.oracle_whatsapp_url,
+            token=settings.oracle_whatsapp_token,
+            user_id=settings.oracle_whatsapp_user_id,
+        )
     if settings.whatsapp_provider == "cloud":
         return CloudProvider(
             settings.whatsapp_phone_number_id, settings.whatsapp_access_token
@@ -270,6 +265,13 @@ def get_provider() -> WhatsAppProvider:
             api_key_secret=settings.twilio_api_key_secret,
             content_sid_event_invite=settings.twilio_content_sid_event_invite,
             status_callback_url=settings.twilio_status_callback_url,
+        )
+    if settings.whatsapp_provider == "openwa":
+        from app.whatsapp.openwa_provider import OpenWhatsAppProvider
+
+        return OpenWhatsAppProvider(
+            base_url=settings.openwa_url,
+            api_key=settings.openwa_api_key,
         )
     return _fake_singleton
 
