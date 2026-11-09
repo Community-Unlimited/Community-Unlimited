@@ -1,7 +1,10 @@
 """Public registration.
 
-18: mobile-first, minimal data entry, no account complexity, and assisted
+18: mobile-first, age-friendly data entry, no account complexity, and assisted
 registration as a first-class path. A community member never gets a password.
+Includes NRIC (last 3 digits + letter), PMD/mobility needs, Kopi Brewing &
+Workout health/safety screening, grassroots volunteering affiliation, and PDPA
+consent records.
 """
 
 from __future__ import annotations
@@ -26,19 +29,44 @@ def _parse_hhmm(value: str) -> time:
 
 
 def create_person(db: DbSession, payload: RegistrationRequest) -> Person:
+    requires_pmd = payload.requires_pmd or payload.mobility_aid == "pmd"
+    mobility_aid = payload.mobility_aid or ("pmd" if requires_pmd else "none")
+    clean_health_notes = (payload.health_notes or "").strip() or None
+    has_health = (
+        payload.has_health_conditions
+        or bool(payload.health_conditions)
+        or bool(clean_health_notes)
+    )
+    clean_grassroots_org = (payload.grassroots_organisation or "").strip() or None
+    is_grassroots = payload.is_grassroots_volunteer or bool(clean_grassroots_org)
+
     person = Person(
         preferred_name=payload.preferred_name.strip(),
         full_name=(payload.full_name or "").strip() or None,
+        nric_last4=payload.nric_last4,
         phone_e164=payload.phone,  # already normalised by the validator
         email=(payload.email or "").strip() or None,
         age_band=payload.age_band,
         preferred_language=payload.preferred_language or "en",
-        home_zone=payload.home_zone,
-        home_precinct=payload.home_precinct,
+        home_zone=(payload.home_zone or "").strip() or None,
+        home_precinct=(payload.home_precinct or "").strip() or None,
+        requires_pmd=requires_pmd,
+        mobility_aid=mobility_aid,
+        has_health_conditions=has_health,
+        health_conditions=list(payload.health_conditions) if payload.health_conditions else [],
+        health_notes=clean_health_notes,
+        emergency_contact_name=(payload.emergency_contact_name or "").strip() or None,
+        emergency_contact_phone=payload.emergency_contact_phone,
+        emergency_contact_relationship=(
+            payload.emergency_contact_relationship or ""
+        ).strip()
+        or None,
+        is_grassroots_volunteer=is_grassroots,
+        grassroots_organisation=clean_grassroots_org if is_grassroots else None,
         status="registered",
         registration_source="assisted" if payload.assisted_registration else "self",
         assisted_registration=payload.assisted_registration,
-        assisted_by=payload.assisted_by,
+        assisted_by=(payload.assisted_by or "").strip() or None,
     )
     db.add(person)
     db.flush()
@@ -57,13 +85,23 @@ def create_person(db: DbSession, payload: RegistrationRequest) -> Person:
         )
 
     now = utcnow()
+    method = "assisted" if payload.assisted_registration else "web_form"
     db.add(
         Consent(
             person_id=person.id,
             consent_type="participation",
             granted=True,
             granted_at=now,
-            method="assisted" if payload.assisted_registration else "web_form",
+            method=method,
+        )
+    )
+    db.add(
+        Consent(
+            person_id=person.id,
+            consent_type="health_safety_declaration",
+            granted=payload.consent_health_safety,
+            granted_at=now if payload.consent_health_safety else None,
+            method=method,
         )
     )
     db.add(
@@ -72,7 +110,16 @@ def create_person(db: DbSession, payload: RegistrationRequest) -> Person:
             consent_type="whatsapp_messaging",
             granted=payload.consent_whatsapp,
             granted_at=now if payload.consent_whatsapp else None,
-            method="assisted" if payload.assisted_registration else "web_form",
+            method=method,
+        )
+    )
+    db.add(
+        Consent(
+            person_id=person.id,
+            consent_type="photo_media",
+            granted=payload.consent_photo_media,
+            granted_at=now if payload.consent_photo_media else None,
+            method=method,
         )
     )
 
@@ -86,6 +133,9 @@ def create_person(db: DbSession, payload: RegistrationRequest) -> Person:
         detail={
             "source": person.registration_source,
             "assisted": person.assisted_registration,
+            "requires_pmd": person.requires_pmd,
+            "has_health_conditions": person.has_health_conditions,
+            "is_grassroots_volunteer": person.is_grassroots_volunteer,
         },
     )
     return person

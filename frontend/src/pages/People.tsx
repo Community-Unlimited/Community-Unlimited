@@ -1,10 +1,11 @@
 /**
  * View 3 — People pipeline and tier tracking.
  *
- * Row cards rather than a table: each person carries their CB1–CB7 standing and
- * the one action available on them. The funnel is deliberately non-linear —
- * CB1–CB4 may be taken in any order, so "missing exactly one module" is a
- * first-class filter rather than a stage in a straight line.
+ * Row cards rather than a table: each person carries their CB1–CB7 standing,
+ * mobility/PMD & health safety badges, grassroots affiliation, and the one
+ * action available on them. The funnel is deliberately non-linear — CB1–CB4 may
+ * be taken in any order, so "missing exactly one module" is a first-class
+ * filter rather than a stage in a straight line.
  */
 
 import { useState } from "react";
@@ -24,6 +25,22 @@ import {
 
 const CORE = ["CB1", "CB2", "CB3", "CB4"];
 const LEADERSHIP = ["CB5", "CB6", "CB7"];
+
+const HEALTH_LABELS: Record<string, string> = {
+  heart_blood_pressure: "Heart / BP",
+  epilepsy_seizures: "Epilepsy / Seizures / Dizziness",
+  joint_balance_mobility: "Joint / Balance",
+  asthma_respiratory: "Asthma / Breathing",
+  heat_grip_sensitivity: "Grip / Heat Sensitivity",
+  allergies: "Allergies",
+  other: "Other Condition",
+};
+
+const MOBILITY_LABELS: Record<string, string> = {
+  pmd: "PMD Required",
+  wheelchair: "Wheelchair",
+  walking_aid: "Walking Aid",
+};
 
 function StatCell({
   label,
@@ -212,6 +229,16 @@ export default function People() {
         <div className="flex flex-col gap-2.5">
           {people.data?.map((person) => {
             const nextPending = pendingByPerson.get(person.id);
+            const mobilityBadge =
+              person.requires_pmd
+                ? "PMD Required"
+                : person.mobility_aid && person.mobility_aid !== "none"
+                  ? MOBILITY_LABELS[person.mobility_aid] ?? person.mobility_aid
+                  : null;
+            const healthList = (person.health_conditions ?? []).map(
+              (c) => HEALTH_LABELS[c] ?? c
+            );
+
             return (
               <div
                 key={person.id}
@@ -222,6 +249,11 @@ export default function People() {
                     <p className="text-[1.125rem] font-bold text-cu-ink">
                       {person.preferred_name}
                     </p>
+                    {person.nric_last4 && (
+                      <span className="rounded-md bg-cu-line-soft px-2 py-0.5 text-cu-caption font-semibold text-cu-body-text">
+                        NRIC •••{person.nric_last4}
+                      </span>
+                    )}
                     <p className="text-cu-body text-cu-body-text">
                       {person.phone_e164}
                     </p>
@@ -234,7 +266,48 @@ export default function People() {
                     >
                       {person.tier?.tier_label ?? "Registered"}
                     </span>
+                    {mobilityBadge && (
+                      <span className="rounded-md border border-cu-amber/30 bg-cu-amber-tint px-2 py-0.5 text-cu-caption font-bold text-cu-amber">
+                        {mobilityBadge}
+                      </span>
+                    )}
+                    {person.has_health_conditions && (
+                      <span className="rounded-md border border-cu-red/30 bg-cu-red-tint px-2 py-0.5 text-cu-caption font-bold text-cu-red">
+                        Health Alert
+                        {healthList.length > 0 ? `: ${healthList.join(", ")}` : ""}
+                      </span>
+                    )}
+                    {person.is_grassroots_volunteer && (
+                      <span className="rounded-md border border-cu-teal-edge bg-cu-teal-tint px-2 py-0.5 text-cu-caption font-bold text-cu-teal-ink">
+                        Grassroots
+                        {person.grassroots_organisation
+                          ? `: ${person.grassroots_organisation}`
+                          : ""}
+                      </span>
+                    )}
                   </div>
+
+                  {(person.health_notes || person.emergency_contact_name) && (
+                    <p className="mt-1.5 text-cu-caption text-cu-body-text">
+                      {person.health_notes && (
+                        <span>
+                          <strong>Safety note:</strong> {person.health_notes}
+                          {person.emergency_contact_name ? " · " : ""}
+                        </span>
+                      )}
+                      {person.emergency_contact_name && (
+                        <span>
+                          <strong>Emergency contact:</strong>{" "}
+                          {person.emergency_contact_name}
+                          {person.emergency_contact_relationship
+                            ? ` (${person.emergency_contact_relationship})`
+                            : ""}{" "}
+                          {person.emergency_contact_phone ?? ""}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
                   {person.tier && (
                     <div className="mt-2.5">
                       <TierPills

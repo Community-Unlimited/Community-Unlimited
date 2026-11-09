@@ -2,15 +2,19 @@
  * Public registration (18).
  *
  * Age-friendly by construction: 16px floor, 44px tap targets, one column, no
- * account creation, minimal required fields (name + phone + consent), and an
- * assisted-registration path for a volunteer filling this in on someone's
- * behalf. Errors are plain language, never a raw validation dump.
+ * account creation, plain-language errors, and an assisted-registration path
+ * for a volunteer filling this in on someone's behalf.
+ *
+ * Captures identity (Last 3 digits + letter of NRIC & Phone), PMD / mobility
+ * requirements, Kopi Brewing & Workout health/safety screening + emergency
+ * contact, grassroots volunteering affiliation, and full Singapore PDPA
+ * consent & activity indemnity.
  */
 
 import { useState } from "react";
 import { post } from "../api/client";
 import type { Person, Tier } from "../api/types";
-import { Banner, Button, Card, Field, inputClass } from "../components/ui";
+import { Banner, Button, Card, Field, SectionTitle, inputClass } from "../components/ui";
 
 interface RegistrationResult {
   already_registered: boolean;
@@ -20,12 +24,73 @@ interface RegistrationResult {
 }
 
 const INTERESTS = [
-  { value: "coffee", label: "Community café / barista" },
-  { value: "exercise_hosting", label: "Hosting exercise sessions" },
+  { value: "coffee", label: "Kopi brewing / Community café barista" },
+  { value: "exercise_hosting", label: "Workout & exercise sessions" },
   { value: "digital_support", label: "Helping others with phones and apps" },
-  { value: "facilitation", label: "Bringing people together" },
+  { value: "facilitation", label: "Bringing neighbours together" },
   { value: "soundtech", label: "Sound and AV" },
   { value: "other", label: "Something else" },
+];
+
+const MOBILITY_OPTIONS = [
+  {
+    value: "none",
+    label: "No mobility aid needed",
+    hint: "I can move around and stand comfortably without a device.",
+  },
+  {
+    value: "pmd",
+    label: "Yes — I use a Personal Mobility Device (PMD)",
+    hint: "Motorised scooter or motorised wheelchair. We will arrange accessible space and safe parking.",
+  },
+  {
+    value: "wheelchair",
+    label: "Yes — I use a manual wheelchair",
+    hint: "We will prepare wheelchair-friendly counter height and workout space.",
+  },
+  {
+    value: "walking_aid",
+    label: "Yes — I use a walking stick or walking frame",
+    hint: "We will make sure seating is nearby during kopi brewing and exercise.",
+  },
+];
+
+const HEALTH_CONDITION_OPTIONS = [
+  {
+    value: "heart_blood_pressure",
+    label: "Heart condition, chest pain, or uncontrolled high blood pressure",
+    hint: "Important for safe pacing during workout sessions.",
+  },
+  {
+    value: "epilepsy_seizures",
+    label: "Epilepsy, seizures/fits, dizziness, fainting spells, or blackouts",
+    hint: "Critical for your safety near hot water/coffee equipment and during workouts.",
+  },
+  {
+    value: "joint_balance_mobility",
+    label: "Joint, bone, back, knee, or balance issues",
+    hint: "Helps us provide seated exercise options or a stool at the kopi booth.",
+  },
+  {
+    value: "asthma_respiratory",
+    label: "Asthma, breathlessness, or breathing difficulties",
+    hint: "Helps trainers monitor exertion levels during workouts.",
+  },
+  {
+    value: "heat_grip_sensitivity",
+    label: "Hand tremors, weak grip, or numbness / sensitivity to heat",
+    hint: "Important when handling hot kopi pots, kettles, and steam wands.",
+  },
+  {
+    value: "allergies",
+    label: "Food or drink allergies (e.g. coffee, milk/dairy, condensed milk, nuts)",
+    hint: "For safe tasting and preparation during kopi brewing sessions.",
+  },
+  {
+    value: "other",
+    label: "Other medical condition or recent surgery",
+    hint: "Please share details in the box below.",
+  },
 ];
 
 const DAYS = [
@@ -40,13 +105,38 @@ const DAYS = [
 
 export default function Register() {
   const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [nricLast4, setNricLast4] = useState("");
   const [phone, setPhone] = useState("");
   const [ageBand, setAgeBand] = useState("");
   const [language, setLanguage] = useState("en");
+
+  // Mobility & PMD
+  const [mobilityAid, setMobilityAid] = useState("none");
+
+  // Health & Safety
+  const [hasHealthConditions, setHasHealthConditions] = useState(false);
+  const [healthConditions, setHealthConditions] = useState<string[]>([]);
+  const [healthNotes, setHealthNotes] = useState("");
+  const [emergencyName, setEmergencyName] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyRelationship, setEmergencyRelationship] = useState("");
+
+  // Grassroots Volunteering
+  const [isGrassroots, setIsGrassroots] = useState(false);
+  const [grassrootsOrg, setGrassrootsOrg] = useState("");
+
+  // Interests & Availability
   const [interests, setInterests] = useState<string[]>([]);
   const [days, setDays] = useState<number[]>([]);
-  const [consent, setConsent] = useState(false);
+
+  // PDPA & Safety Consents
+  const [consentParticipation, setConsentParticipation] = useState(false);
+  const [consentHealthSafety, setConsentHealthSafety] = useState(false);
   const [whatsapp, setWhatsapp] = useState(true);
+  const [photoMedia, setPhotoMedia] = useState(false);
+
+  // Assisted Registration
   const [assisted, setAssisted] = useState(false);
   const [assistedBy, setAssistedBy] = useState("");
 
@@ -58,26 +148,92 @@ export default function Register() {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
   }
 
+  function resetForm() {
+    setDone(null);
+    setName("");
+    setFullName("");
+    setNricLast4("");
+    setPhone("");
+    setAgeBand("");
+    setLanguage("en");
+    setMobilityAid("none");
+    setHasHealthConditions(false);
+    setHealthConditions([]);
+    setHealthNotes("");
+    setEmergencyName("");
+    setEmergencyPhone("");
+    setEmergencyRelationship("");
+    setIsGrassroots(false);
+    setGrassrootsOrg("");
+    setInterests([]);
+    setDays([]);
+    setConsentParticipation(false);
+    setConsentHealthSafety(false);
+    setWhatsapp(true);
+    setPhotoMedia(false);
+    setAssisted(false);
+    setAssistedBy("");
+    setError(null);
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const cleanedNric = nricLast4.trim().toUpperCase().replace(/\s+/g, "");
+    if (!/^\d{3}[A-Z]?$/.test(cleanedNric)) {
+      setError(
+        "Please enter the last 3 digits and letter of your NRIC/FIN (for example: 123A)."
+      );
+      return;
+    }
+
+    if (hasHealthConditions && healthConditions.length === 0 && !healthNotes.trim()) {
+      setError(
+        "Please tick at least one health condition or describe it in the notes box so we can keep you safe."
+      );
+      return;
+    }
+
+    if (isGrassroots && !grassrootsOrg.trim()) {
+      setError(
+        "Please tell us which grassroots or community organisation you volunteer with."
+      );
+      return;
+    }
+
     setBusy(true);
     try {
       const result = await post<RegistrationResult>("/api/register", {
         preferred_name: name,
+        full_name: fullName.trim() || null,
+        nric_last4: cleanedNric,
         phone,
         age_band: ageBand || null,
         preferred_language: language,
+        requires_pmd: mobilityAid === "pmd",
+        mobility_aid: mobilityAid,
+        has_health_conditions:
+          hasHealthConditions || healthConditions.length > 0 || Boolean(healthNotes.trim()),
+        health_conditions: hasHealthConditions ? healthConditions : [],
+        health_notes: hasHealthConditions ? healthNotes.trim() || null : null,
+        emergency_contact_name: emergencyName.trim() || null,
+        emergency_contact_phone: emergencyPhone.trim() || null,
+        emergency_contact_relationship: emergencyRelationship.trim() || null,
+        is_grassroots_volunteer: isGrassroots,
+        grassroots_organisation: isGrassroots ? grassrootsOrg.trim() || null : null,
         interests,
         availability: days.map((weekday) => ({
           weekday,
           start_time: "09:00",
           end_time: "12:00",
         })),
-        consent_participation: consent,
+        consent_participation: consentParticipation,
+        consent_health_safety: consentHealthSafety,
         consent_whatsapp: whatsapp,
+        consent_photo_media: photoMedia,
         assisted_registration: assisted,
-        assisted_by: assisted ? assistedBy || null : null,
+        assisted_by: assisted ? assistedBy.trim() || null : null,
       });
       setDone(result);
     } catch (err) {
@@ -102,17 +258,7 @@ export default function Register() {
             </p>
           )}
           <div className="mt-6">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setDone(null);
-                setName("");
-                setPhone("");
-                setInterests([]);
-                setDays([]);
-                setConsent(false);
-              }}
-            >
+            <Button variant="ghost" onClick={resetForm}>
               Register someone else
             </Button>
           </div>
@@ -127,72 +273,386 @@ export default function Register() {
         Join Community Unlimited
       </h1>
       <p className="mt-2 text-[1.0625rem] text-cu-body-text">
-        Age is not the limit. Disconnection is. Tell us how to reach you and
-        what you'd enjoy — that's all we need to start.
+        Age is not the limit. Disconnection is. Register below for our{" "}
+        <strong>Kopi Brewing</strong> and <strong>Community Workout</strong>{" "}
+        sessions — tell us how to reach you and how we can keep you safe and
+        comfortable.
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-5">
         {error && <Banner tone="red">{error}</Banner>}
 
+        {/* 1. Identity & Contact */}
         <Card className="space-y-5">
-          <Field label="Your name" required hint="What would you like to be called?">
+          <SectionTitle
+            rule
+            hint="Required for event attendance, verification, and sending session updates."
+          >
+            1. Your Details
+          </SectionTitle>
+
+          <Field label="Preferred name" required hint="What would you like to be called?">
             <input
               className={inputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
               autoComplete="given-name"
+              placeholder="e.g. Ah Huat / Mary"
             />
           </Field>
 
           <Field
-            label="Mobile number"
-            required
-            hint="Singapore number. We'll send session invites here on WhatsApp."
+            label="Full name (as in NRIC)"
+            hint="Optional. Helpful for official event attendance and certificates."
           >
             <input
               className={inputClass}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="9123 4567"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete="name"
+              placeholder="e.g. Tan Ah Huat"
             />
           </Field>
 
-          <Field label="Age group" hint="Optional. Helps us plan suitable sessions.">
-            <select
-              className={inputClass}
-              value={ageBand}
-              onChange={(e) => setAgeBand(e.target.value)}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field
+              label="Last 3 digits & letter of NRIC"
+              required
+              hint="E.g. 123A (do not enter your full NRIC)."
             >
-              <option value="">Prefer not to say</option>
-              <option value="50-59">50 to 59</option>
-              <option value="60-69">60 to 69</option>
-              <option value="70-79">70 to 79</option>
-              <option value="80+">80 and above</option>
-            </select>
-          </Field>
+              <input
+                className={`${inputClass} uppercase`}
+                value={nricLast4}
+                onChange={(e) => setNricLast4(e.target.value.toUpperCase())}
+                required
+                maxLength={4}
+                placeholder="123A"
+              />
+            </Field>
 
-          <Field label="Preferred language">
-            <select
-              className={inputClass}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+            <Field
+              label="Mobile number"
+              required
+              hint="Singapore number for WhatsApp invites."
             >
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-              <option value="ms">Bahasa Melayu</option>
-              <option value="ta">தமிழ்</option>
-            </select>
-          </Field>
+              <input
+                className={inputClass}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="9123 4567"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Age group" hint="Helps us plan suitable sessions.">
+              <select
+                className={inputClass}
+                value={ageBand}
+                onChange={(e) => setAgeBand(e.target.value)}
+              >
+                <option value="">Prefer not to say</option>
+                <option value="50-59">50 to 59</option>
+                <option value="60-69">60 to 69</option>
+                <option value="70-79">70 to 79</option>
+                <option value="80+">80 and above</option>
+              </select>
+            </Field>
+
+            <Field label="Preferred language">
+              <select
+                className={inputClass}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+              >
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ms">Bahasa Melayu</option>
+                <option value="ta">தமிழ்</option>
+              </select>
+            </Field>
+          </div>
         </Card>
 
-        <Card>
+        {/* 2. Mobility & PMD */}
+        <Card className="space-y-4">
+          <SectionTitle
+            rule
+            hint="Helps us arrange counter space for Kopi Brewing, seated Workout options, and PMD parking."
+          >
+            2. Mobility &amp; PMD Needs
+          </SectionTitle>
+
           <fieldset>
             <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
-              What would you enjoy? <span className="font-normal text-cu-body-text">(choose any)</span>
+              Do you require a Personal Mobility Device (PMD) or mobility aid?{" "}
+              <span className="text-cu-red">*</span>
+            </legend>
+            <div className="space-y-2.5">
+              {MOBILITY_OPTIONS.map((option) => {
+                const selected = mobilityAid === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`tap-target flex cursor-pointer items-start gap-3 rounded-cu border px-4 py-3 transition ${
+                      selected
+                        ? "border-cu-teal-ink bg-cu-teal-tint"
+                        : "border-cu-line hover:bg-cu-teal-tint/60"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="mobility_aid"
+                      value={option.value}
+                      checked={selected}
+                      onChange={() => setMobilityAid(option.value)}
+                      className="mt-1 h-5 w-5 accent-cu-teal-ink"
+                    />
+                    <span>
+                      <span className="block text-cu-body font-semibold text-cu-ink">
+                        {option.label}
+                      </span>
+                      <span className="block text-cu-caption text-cu-body-text">
+                        {option.hint}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        </Card>
+
+        {/* 3. Health Conditions & Emergency Contact */}
+        <Card className="space-y-5">
+          <SectionTitle
+            rule
+            hint="Kopi Brewing involves hot water/equipment and Workouts involve physical exercise. Please share any conditions so we can look out for you."
+          >
+            3. Health &amp; Safety Declaration
+          </SectionTitle>
+
+          <fieldset>
+            <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
+              Do you have any medical or health conditions we should be aware of?{" "}
+              <span className="text-cu-red">*</span>
+            </legend>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <label
+                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
+                  !hasHealthConditions
+                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                    : "border-cu-line hover:bg-cu-teal-tint/60"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="has_health"
+                  checked={!hasHealthConditions}
+                  onChange={() => {
+                    setHasHealthConditions(false);
+                    setHealthConditions([]);
+                    setHealthNotes("");
+                  }}
+                  className="h-5 w-5 accent-cu-teal-ink"
+                />
+                <span className="text-cu-body text-cu-ink">
+                  No — I have no known conditions
+                </span>
+              </label>
+
+              <label
+                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
+                  hasHealthConditions
+                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                    : "border-cu-line hover:bg-cu-teal-tint/60"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="has_health"
+                  checked={hasHealthConditions}
+                  onChange={() => setHasHealthConditions(true)}
+                  className="h-5 w-5 accent-cu-teal-ink"
+                />
+                <span className="text-cu-body text-cu-ink">
+                  Yes — I want to declare a condition
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          {hasHealthConditions && (
+            <div className="space-y-4 rounded-xl border border-cu-border bg-cu-surface p-4">
+              <fieldset>
+                <legend className="mb-2.5 text-cu-body font-semibold text-cu-ink">
+                  Please tick any conditions that apply to you:
+                </legend>
+                <div className="space-y-2">
+                  {HEALTH_CONDITION_OPTIONS.map((item) => (
+                    <label
+                      key={item.value}
+                      className="tap-target flex cursor-pointer items-start gap-3 rounded-cu border border-cu-line px-3.5 py-2.5 hover:bg-cu-teal-tint"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-5 w-5 accent-cu-teal-ink"
+                        checked={healthConditions.includes(item.value)}
+                        onChange={() =>
+                          setHealthConditions(toggle(healthConditions, item.value))
+                        }
+                      />
+                      <span>
+                        <span className="block text-cu-body font-medium text-cu-ink">
+                          {item.label}
+                        </span>
+                        <span className="block text-cu-caption text-cu-body-text">
+                          {item.hint}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <Field
+                label="Details, allergies, or precautions"
+                hint="E.g. type of allergy, medication carried, or if you need a chair during sessions."
+              >
+                <textarea
+                  className={inputClass}
+                  rows={3}
+                  value={healthNotes}
+                  onChange={(e) => setHealthNotes(e.target.value)}
+                  placeholder="Share any details that help our facilitators keep you safe…"
+                />
+              </Field>
+            </div>
+          )}
+
+          <div className="border-t border-cu-line pt-4">
+            <p className="mb-3 text-cu-body font-semibold text-cu-ink">
+              Emergency Contact (Next-of-Kin)
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="Contact name" required>
+                <input
+                  className={inputClass}
+                  value={emergencyName}
+                  onChange={(e) => setEmergencyName(e.target.value)}
+                  required
+                  placeholder="e.g. Tan Mei Ling"
+                />
+              </Field>
+
+              <Field label="Contact mobile" required>
+                <input
+                  className={inputClass}
+                  value={emergencyPhone}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                  required
+                  inputMode="tel"
+                  placeholder="9876 5432"
+                />
+              </Field>
+
+              <Field label="Relationship">
+                <input
+                  className={inputClass}
+                  value={emergencyRelationship}
+                  onChange={(e) => setEmergencyRelationship(e.target.value)}
+                  placeholder="e.g. Daughter / Spouse"
+                />
+              </Field>
+            </div>
+          </div>
+        </Card>
+
+        {/* 4. Grassroots Volunteering */}
+        <Card className="space-y-4">
+          <SectionTitle
+            rule
+            hint="Let us know if you already serve in a Residents' Network (RN), RC/NC, CC, Active Ageing Centre (AAC), or PA grassroots group."
+          >
+            4. Grassroots &amp; Community Volunteering
+          </SectionTitle>
+
+          <fieldset>
+            <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
+              Are you currently volunteering with any grassroots or community
+              organisation? <span className="text-cu-red">*</span>
+            </legend>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <label
+                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
+                  !isGrassroots
+                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                    : "border-cu-line hover:bg-cu-teal-tint/60"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="is_grassroots"
+                  checked={!isGrassroots}
+                  onChange={() => {
+                    setIsGrassroots(false);
+                    setGrassrootsOrg("");
+                  }}
+                  className="h-5 w-5 accent-cu-teal-ink"
+                />
+                <span className="text-cu-body text-cu-ink">No, not currently</span>
+              </label>
+
+              <label
+                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
+                  isGrassroots
+                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                    : "border-cu-line hover:bg-cu-teal-tint/60"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="is_grassroots"
+                  checked={isGrassroots}
+                  onChange={() => setIsGrassroots(true)}
+                  className="h-5 w-5 accent-cu-teal-ink"
+                />
+                <span className="text-cu-body text-cu-ink">
+                  Yes, I volunteer in grassroots
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          {isGrassroots && (
+            <Field
+              label="Which grassroots / community organisation(s)?"
+              required
+              hint="E.g. Boon Lay RN, Jurong West CC, Silver Generation Ambassador, AAC."
+            >
+              <input
+                className={inputClass}
+                value={grassrootsOrg}
+                onChange={(e) => setGrassrootsOrg(e.target.value)}
+                required
+                placeholder="e.g. Boon Lay Zone A RN"
+              />
+            </Field>
+          )}
+        </Card>
+
+        {/* 5. Activities & Availability */}
+        <Card className="space-y-5">
+          <SectionTitle rule>5. Activities &amp; Availability</SectionTitle>
+
+          <fieldset>
+            <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
+              What would you enjoy?{" "}
+              <span className="font-normal text-cu-body-text">(choose any)</span>
             </legend>
             <div className="space-y-2">
               {INTERESTS.map((interest) => (
@@ -211,9 +671,7 @@ export default function Register() {
               ))}
             </div>
           </fieldset>
-        </Card>
 
-        <Card>
           <fieldset>
             <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
               Which mornings are usually free?{" "}
@@ -242,18 +700,76 @@ export default function Register() {
           </fieldset>
         </Card>
 
+        {/* 6. PDPA Data Protection & Safety Consent */}
         <Card className="space-y-4">
+          <SectionTitle
+            rule
+            hint="In compliance with Singapore's Personal Data Protection Act (PDPA)."
+          >
+            6. PDPA Data Protection &amp; Safety Consent
+          </SectionTitle>
+
+          <div className="rounded-xl border border-cu-border bg-cu-surface p-4 text-cu-caption text-cu-body-text space-y-2">
+            <p className="font-semibold text-cu-ink">
+              Personal Data Protection Notice (PDPA)
+            </p>
+            <p>
+              Community Unlimited collects your personal data (Name, Last 3 digits &amp;
+              letter of NRIC, Mobile Number, Grassroots affiliation, Emergency Contact,
+              and Health/Mobility declarations) for the purposes of:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                Verifying identity, managing registration, and coordinating Kopi
+                Brewing &amp; Workout training and community deployments;
+              </li>
+              <li>
+                Ensuring venue accessibility (including PMD space), participant safety,
+                and contacting your Next-of-Kin or medical services in an emergency;
+              </li>
+              <li>
+                Coordinating community programmes with relevant grassroots / community
+                partners in your precinct.
+              </li>
+            </ul>
+            <p>
+              You may withdraw your consent or request access/correction of your data at
+              any time by informing a Community Unlimited coordinator.
+            </p>
+          </div>
+
           <label className="flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
+              checked={consentParticipation}
+              onChange={(e) => setConsentParticipation(e.target.checked)}
               required
             />
             <span className="text-cu-body text-cu-ink">
-              I'm happy for Community Unlimited to keep my details so they can
-              contact me about activities. <span className="text-cu-red">*</span>
+              <strong>PDPA Personal Data Consent:</strong> I consent to Community
+              Unlimited collecting, using, and disclosing my personal data for
+              programme registration, coordination with community/grassroots partners,
+              and emergency contact purposes as stated above.{" "}
+              <span className="text-cu-red">*</span>
+            </span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 accent-cu-teal-ink"
+              checked={consentHealthSafety}
+              onChange={(e) => setConsentHealthSafety(e.target.checked)}
+              required
+            />
+            <span className="text-cu-body text-cu-ink">
+              <strong>Health &amp; Activity Safety Declaration:</strong> I confirm that
+              my health and mobility declaration is accurate. I understand that Kopi
+              Brewing involves hot water/equipment and Workouts involve physical
+              activity; I will participate at my own pace, follow safety instructions,
+              and inform facilitators immediately if I feel unwell.{" "}
+              <span className="text-cu-red">*</span>
             </span>
           </label>
 
@@ -265,10 +781,25 @@ export default function Register() {
               onChange={(e) => setWhatsapp(e.target.checked)}
             />
             <span className="text-cu-body text-cu-ink">
-              Send me invites and reminders on WhatsApp.
+              <strong>WhatsApp &amp; Communications (Optional):</strong> Send me session
+              invites, reminders, and community updates on WhatsApp.
               <span className="block text-cu-caption text-cu-body-text">
                 You can say no and still take part — we'll ring you instead.
               </span>
+            </span>
+          </label>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 accent-cu-teal-ink"
+              checked={photoMedia}
+              onChange={(e) => setPhotoMedia(e.target.checked)}
+            />
+            <span className="text-cu-body text-cu-ink">
+              <strong>Photography &amp; Media (Optional):</strong> I consent to photos
+              and videos taken during Kopi Brewing and Workout events being used for
+              community reporting, outreach, and publicity.
             </span>
           </label>
 
@@ -282,22 +813,26 @@ export default function Register() {
               onChange={(e) => setAssisted(e.target.checked)}
             />
             <span className="text-cu-body text-cu-ink">
-              I'm filling this in for someone else
+              I'm filling this in for someone else (Assisted Registration)
             </span>
           </label>
           {assisted && (
-            <Field label="Your name (the helper)">
+            <Field
+              label="Your name (the volunteer / helper)"
+              hint="Please confirm you have read the PDPA notice and safety declaration to the participant."
+            >
               <input
                 className={inputClass}
                 value={assistedBy}
                 onChange={(e) => setAssistedBy(e.target.value)}
+                placeholder="e.g. Volunteer Sarah"
               />
             </Field>
           )}
         </Card>
 
         <Button type="submit" disabled={busy} className="w-full">
-          {busy ? "Sending…" : "Register"}
+          {busy ? "Sending…" : "Complete Registration"}
         </Button>
         <p className="text-center text-cu-caption text-cu-body-text">
           Prefer paper or a phone call? Ask any Community Unlimited volunteer —
