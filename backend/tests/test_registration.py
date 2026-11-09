@@ -12,8 +12,11 @@ def _payload(**overrides) -> dict:
     base = {
         "preferred_name": "Ah Huat",
         "phone": "9123 4567",
+        "nric_last4": "123a",
         "consent_participation": True,
+        "consent_health_safety": True,
         "consent_whatsapp": True,
+        "consent_photo_media": False,
         "interests": ["coffee"],
         "age_band": "60-69",
         "availability": [{"weekday": 0, "start_time": "09:00", "end_time": "12:00"}],
@@ -28,24 +31,77 @@ def test_registration_normalises_the_phone_number(client: TestClient, db) -> Non
     body = response.json()
     assert body["already_registered"] is False
     assert body["person"]["phone_e164"] == "+6591234567"
+    assert body["person"]["nric_last4"] == "123A"
 
 
-def test_registration_records_both_consents_separately(client: TestClient, db) -> None:
-    client.post("/api/register", json=_payload(consent_whatsapp=False))
+def test_registration_records_all_consents_separately(client: TestClient, db) -> None:
+    client.post(
+        "/api/register",
+        json=_payload(consent_whatsapp=False, consent_photo_media=True),
+    )
     db.expire_all()
     person = db.scalar(select(Person).where(Person.phone_e164 == "+6591234567"))
     consents = {c.consent_type: c for c in person.consents}
 
     assert consents["participation"].granted is True
     assert consents["participation"].granted_at is not None
+    assert consents["health_safety_declaration"].granted is True
+    assert consents["health_safety_declaration"].granted_at is not None
     # Declining messaging must not block registration.
     assert consents["whatsapp_messaging"].granted is False
     assert consents["whatsapp_messaging"].granted_at is None
+    assert consents["photo_media"].granted is True
+    assert consents["photo_media"].granted_at is not None
 
 
 def test_participation_consent_is_mandatory(client: TestClient) -> None:
     response = client.post("/api/register", json=_payload(consent_participation=False))
     assert response.status_code == 422
+
+
+def test_health_safety_consent_is_mandatory(client: TestClient) -> None:
+    response = client.post("/api/register", json=_payload(consent_health_safety=False))
+    assert response.status_code == 422
+
+
+def test_invalid_nric_last4_is_rejected(client: TestClient) -> None:
+    response = client.post("/api/register", json=_payload(nric_last4="ABCD"))
+    assert response.status_code == 422
+    assert "NRIC" in response.text
+
+
+def test_pmd_health_and_grassroots_fields_are_stored(
+    client: TestClient, db
+) -> None:
+    response = client.post(
+        "/api/register",
+        json=_payload(
+            mobility_aid="pmd",
+            has_health_conditions=True,
+            health_conditions=["epilepsy_seizures", "heart_blood_pressure"],
+            health_notes="Needs seated breaks during kopi brewing.",
+            emergency_contact_name="Tan Mei Ling",
+            emergency_contact_phone="9876 5432",
+            emergency_contact_relationship="Daughter",
+            is_grassroots_volunteer=True,
+            grassroots_organisation="Boon Lay Zone A RN",
+        ),
+    )
+    assert response.status_code == 200, response.text
+    person_out = response.json()["person"]
+    assert person_out["requires_pmd"] is True
+    assert person_out["mobility_aid"] == "pmd"
+    assert person_out["has_health_conditions"] is True
+    assert person_out["health_conditions"] == [
+        "epilepsy_seizures",
+        "heart_blood_pressure",
+    ]
+    assert person_out["health_notes"] == "Needs seated breaks during kopi brewing."
+    assert person_out["emergency_contact_name"] == "Tan Mei Ling"
+    assert person_out["emergency_contact_phone"] == "+6598765432"
+    assert person_out["emergency_contact_relationship"] == "Daughter"
+    assert person_out["is_grassroots_volunteer"] is True
+    assert person_out["grassroots_organisation"] == "Boon Lay Zone A RN"
 
 
 def test_invalid_phone_is_rejected_with_a_useful_message(client: TestClient) -> None:

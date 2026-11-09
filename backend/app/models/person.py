@@ -1,16 +1,25 @@
 """People - the master community record.
 
 Privacy rule from the handoff (11.2): CU focuses on *robust* seniors, but that
-is not a reason to infer or store any health or frailty label. There is
-deliberately no health field here. If one is ever needed it requires its own
-justified workflow, minimal capture and explicit consent.
+is not a reason to infer or store any health or frailty label. When health,
+mobility (PMD), or safety screening fields are collected for Kopi Brewing and
+Workout events, they are captured with minimal scope and explicit PDPA consent.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, time
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UtcDateTime
@@ -27,6 +36,8 @@ class Person(Base, TimestampMixin):
 
     preferred_name: Mapped[str] = mapped_column(String(120), nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(200))
+    # Last 3 digits + optional checksum letter of NRIC/FIN (e.g. "123A" or "123").
+    nric_last4: Mapped[str | None] = mapped_column(String(8))
     # The WhatsApp number is the identity key, so it is unique and always E.164.
     phone_e164: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
     email: Mapped[str | None] = mapped_column(String(255))
@@ -39,6 +50,31 @@ class Person(Base, TimestampMixin):
     home_zone: Mapped[str | None] = mapped_column(String(120))
     home_precinct: Mapped[str | None] = mapped_column(String(120))
     travel_willingness: Mapped[str | None] = mapped_column(String(STATUS_LEN))
+
+    # Mobility & PMD (Personal Mobility Device) requirements for venue layout & safety
+    requires_pmd: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    # none | pmd | wheelchair | walking_aid
+    mobility_aid: Mapped[str | None] = mapped_column(String(STATUS_LEN))
+
+    # Health & Safety declaration for Kopi Brewing & Workout events
+    has_health_conditions: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    health_conditions: Mapped[list[str] | None] = mapped_column(JSON)
+    health_notes: Mapped[str | None] = mapped_column(Text)
+
+    # Emergency contact (Next-of-Kin) for activity safety & indemnity
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(120))
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(32))
+    emergency_contact_relationship: Mapped[str | None] = mapped_column(String(64))
+
+    # Grassroots / Community Volunteering affiliation
+    is_grassroots_volunteer: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    grassroots_organisation: Mapped[str | None] = mapped_column(String(200))
 
     # registered | active | paused | withdrawn
     status: Mapped[str] = mapped_column(
@@ -128,7 +164,7 @@ class Consent(Base, TimestampMixin):
     person_id: Mapped[int] = mapped_column(
         ForeignKey("people.id", ondelete="CASCADE"), nullable=False
     )
-    # participation | whatsapp_messaging | photo_media
+    # participation | whatsapp_messaging | health_safety_declaration | photo_media
     consent_type: Mapped[str] = mapped_column(String(64), nullable=False)
     granted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     version: Mapped[str] = mapped_column(String(32), default="v1", nullable=False)

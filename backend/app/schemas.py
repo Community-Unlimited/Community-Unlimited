@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from typing import Any, Literal
 
@@ -44,6 +45,25 @@ INTERESTS = (
     "other",
 )
 
+MOBILITY_AIDS = (
+    "none",
+    "pmd",
+    "wheelchair",
+    "walking_aid",
+)
+
+HEALTH_CONDITIONS = (
+    "heart_blood_pressure",
+    "epilepsy_seizures",
+    "joint_balance_mobility",
+    "asthma_respiratory",
+    "heat_grip_sensitivity",
+    "allergies",
+    "other",
+)
+
+_NRIC_PARTIAL_RE = re.compile(r"^\d{3}[A-Z]?$")
+
 
 class AvailabilityIn(BaseModel):
     weekday: int = Field(ge=0, le=6)
@@ -52,11 +72,12 @@ class AvailabilityIn(BaseModel):
 
 
 class RegistrationRequest(BaseModel):
-    """18: minimal data entry. Only name, phone and consent are required."""
+    """18: public & assisted registration with safety, PMD, grassroots & PDPA."""
 
     preferred_name: str = Field(min_length=1, max_length=120)
     phone: str
     full_name: str | None = None
+    nric_last4: str | None = None
     email: str | None = None
     age_band: str | None = None
     preferred_language: str = "en"
@@ -65,9 +86,29 @@ class RegistrationRequest(BaseModel):
     interests: list[str] = Field(default_factory=list)
     availability: list[AvailabilityIn] = Field(default_factory=list)
 
-    # 19: participation consent is required; messaging consent is separate.
+    # Mobility & PMD (Personal Mobility Device)
+    requires_pmd: bool = False
+    mobility_aid: str | None = None
+
+    # Health & Safety screening for Kopi Brewing & Workout sessions
+    has_health_conditions: bool = False
+    health_conditions: list[str] = Field(default_factory=list)
+    health_notes: str | None = None
+
+    # Emergency contact (Next-of-Kin)
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
+    emergency_contact_relationship: str | None = None
+
+    # Grassroots / Community Volunteering
+    is_grassroots_volunteer: bool = False
+    grassroots_organisation: str | None = None
+
+    # 19: PDPA & Safety Consents
     consent_participation: bool
+    consent_health_safety: bool = True
     consent_whatsapp: bool = False
+    consent_photo_media: bool = False
 
     # 18: assisted registration by a volunteer or staff member.
     assisted_registration: bool = False
@@ -81,11 +122,63 @@ class RegistrationRequest(BaseModel):
         except InvalidPhoneNumber as exc:
             raise ValueError(str(exc)) from exc
 
+    @field_validator("nric_last4")
+    @classmethod
+    def _valid_nric_last4(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        cleaned = v.strip().upper().replace(" ", "")
+        if not cleaned:
+            return None
+        # Strip leading masking characters if user typed e.g. "XXXX123A" or "Sxxxx123A"
+        if len(cleaned) > 4:
+            cleaned = cleaned[-4:]
+        if not _NRIC_PARTIAL_RE.match(cleaned):
+            raise ValueError(
+                "Please enter the last 3 digits and letter of your NRIC/FIN (e.g. 123A)"
+            )
+        return cleaned
+
+    @field_validator("emergency_contact_phone")
+    @classmethod
+    def _valid_emergency_phone(cls, v: str | None) -> str | None:
+        if v is None or not v.strip():
+            return None
+        try:
+            return normalize_sg_phone(v)
+        except InvalidPhoneNumber as exc:
+            raise ValueError(f"Emergency contact number: {exc}") from exc
+
+    @field_validator("mobility_aid")
+    @classmethod
+    def _valid_mobility_aid(cls, v: str | None) -> str | None:
+        if v is None or not v.strip():
+            return None
+        cleaned = v.strip().lower()
+        if cleaned not in MOBILITY_AIDS:
+            raise ValueError(f"unknown mobility aid: {cleaned}")
+        return cleaned
+
+    @field_validator("health_conditions")
+    @classmethod
+    def _valid_health_conditions(cls, v: list[str]) -> list[str]:
+        unknown = [c for c in v if c not in HEALTH_CONDITIONS]
+        if unknown:
+            raise ValueError(f"unknown health conditions: {', '.join(unknown)}")
+        return list(dict.fromkeys(v))
+
     @field_validator("consent_participation")
     @classmethod
     def _must_consent(cls, v: bool) -> bool:
         if not v:
             raise ValueError("participation consent is required to register")
+        return v
+
+    @field_validator("consent_health_safety")
+    @classmethod
+    def _must_consent_safety(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("health and safety acknowledgement is required to register")
         return v
 
     @field_validator("interests")
@@ -115,12 +208,23 @@ class PersonOut(ORMModel):
     id: int
     preferred_name: str
     full_name: str | None
+    nric_last4: str | None = None
     phone_e164: str
     email: str | None
     age_band: str | None
     preferred_language: str
     home_zone: str | None
     home_precinct: str | None
+    requires_pmd: bool = False
+    mobility_aid: str | None = None
+    has_health_conditions: bool = False
+    health_conditions: list[str] | None = None
+    health_notes: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
+    emergency_contact_relationship: str | None = None
+    is_grassroots_volunteer: bool = False
+    grassroots_organisation: str | None = None
     status: str
     registration_source: str
     assisted_registration: bool
