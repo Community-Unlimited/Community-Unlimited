@@ -149,3 +149,15 @@ export interface PendingQualification {
   module_name: string;
   achieved_at: string | null;
 }
+
+export interface WhatsAppAdminStatus {
+  ok: boolean;
+  provider: string;
+  connected: boolean;
+  state: "connected" | "qr" | "disconnected" | "starting" | "error" | "unconfigured";
+  phone?: string | null;
+  displayName?: string | null;
+  qrDataUrl?: string | null;
+  error?: string | null;
+  sessionGeneration?: string | null;
+}

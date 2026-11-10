@@ -430,6 +430,21 @@ _fake_singleton = FakeProvider()
 
 def get_provider() -> WhatsAppProvider:
     settings = get_settings()
+    if settings.whatsapp_provider == "oracle":
+        from app.whatsapp.oracle_provider import OracleWhatsAppProvider
+
+        return OracleWhatsAppProvider(
+            base_url=settings.oracle_whatsapp_url,
+            token=settings.oracle_whatsapp_token,
+            user_id=settings.oracle_whatsapp_user_id,
+        )
+    if settings.whatsapp_provider == "openwa":
+        from app.whatsapp.openwa_provider import OpenWhatsAppProvider
+
+        return OpenWhatsAppProvider(
+            base_url=settings.openwa_url,
+            api_key=settings.openwa_api_key,
+        )
     if settings.whatsapp_provider == "cloud":
         return CloudProvider(
             settings.whatsapp_phone_number_id, settings.whatsapp_access_token

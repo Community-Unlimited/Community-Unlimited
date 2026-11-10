@@ -1,34 +1,24 @@
-# Render blueprint — ONE service for the whole app, plus the optional WAHA
-# WhatsApp bridge (cu-os-waha, at the bottom).
+# Render blueprint — ONE service for the whole app (CU-OS API + React SPA)
 #
 # The root Dockerfile builds the React SPA and copies it into the Python image,
 # which serves it from the same origin as /api. That means no CORS, no
-# VITE_API_BASE_URL, one URL and one thing to pay for.
+# VITE_API_BASE_URL, one URL, and one service to pay for.
 #
-# cu-os-waha is a second Starter instance with its own disk. Delete that
-# service (and the three CU_WAHA_* entries) once Meta's Cloud API is live.
+# The persistent SQLite database lives on a 1GB mounted volume at /data.
+# The WhatsApp engine connects to the persistent external Oracle Cloud bridge
+# (https://whatsapp.rejey-services.tech), so NO extra container/cost is needed.
 #
-# No CLI needed: in the Render dashboard choose New > Blueprint and point it at
-# this repo.
-#
-# PLAN: a persistent disk requires a paid instance (Starter, ~US$7/mo). On the
-# free plan there is no disk and the service sleeps after inactivity, so SQLite
-# data is lost on restart and the first webhook after a sleep times out. Free
-# is fine for a demo; not for real registrations.
+# Total cost: Starter plan ($7/mo) + 1GB persistent disk ($0.25/mo) = ~$7.25 / month.
 
 services:
   - type: web
     name: cu-os-api
     runtime: docker
-    # Build context is the repo root — the image needs both frontend/ and
-    # backend/.
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: singapore
     plan: starter
     healthCheckPath: /api/health
-    # One instance only: the reminder sweep is an in-process loop and a second
-    # instance double-sends.
     numInstances: 1
     disk:
       name: cuos-data
@@ -37,24 +27,27 @@ services:
     envVars:
       - key: CU_DATABASE_URL
         value: sqlite:////data/cuos.db
-      # Set by the Dockerfile too; explicit here so it is visible in the
-      # dashboard.
       - key: CU_STATIC_DIR
         value: /app/static
+      # WhatsApp Provider defaults to Oracle Cloud persistent bridge
       - key: CU_WHATSAPP_PROVIDER
-        value: fake
+        value: oracle
+      - key: CU_ORACLE_WHATSAPP_URL
+        value: https://whatsapp.rejey-services.tech
+      - key: CU_ORACLE_WHATSAPP_TOKEN
+        sync: false
+      - key: CU_ORACLE_WHATSAPP_USER_ID
+        sync: false
       - key: CU_JWT_SECRET
         generateValue: true
       - key: CU_ADMIN_EMAIL
         value: admin@communityunlimited.sg
-      # Set a real value in the dashboard — leaving this unset seeds the
-      # default password, which must never reach a public URL.
       - key: CU_ADMIN_PASSWORD
         sync: false
-      # Only needed if a separate frontend origin (e.g. Vercel) is kept.
-      # Same-origin serving needs no CORS at all.
       - key: CU_CORS_ORIGINS
         sync: false
+
+      # Optional fallback: Meta WhatsApp Cloud API
       - key: CU_WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: CU_WHATSAPP_ACCESS_TOKEN
@@ -63,12 +56,10 @@ services:
         sync: false
       - key: CU_WHATSAPP_VERIFY_TOKEN
         sync: false
-      # --- Twilio (set CU_WHATSAPP_PROVIDER=twilio to activate) -------------
-      # All sync:false — secrets are entered in the dashboard, never here.
+
+      # Optional fallback: Twilio
       - key: CU_TWILIO_ACCOUNT_SID
         sync: false
-      # Required even when sends use the API key pair: inbound webhook
-      # signatures are keyed on the auth token and nothing else validates them.
       - key: CU_TWILIO_AUTH_TOKEN
         sync: false
       - key: CU_TWILIO_API_KEY_SID
@@ -77,80 +68,9 @@ services:
         sync: false
       - key: CU_TWILIO_WHATSAPP_FROM
         sync: false
-      # Set this to the deployed URL of the webhook, exactly as registered in
-      # the Twilio console — e.g.
-      #   https://cu-os-api.onrender.com/api/whatsapp/twilio/webhook
-      # Render terminates TLS, so a URL rebuilt from the request arrives as
-      # http:// and the signature check fails with a 401 that reads like bad
-      # credentials. Setting it explicitly removes that failure mode.
       - key: CU_TWILIO_WEBHOOK_URL
         sync: false
       - key: CU_TWILIO_STATUS_CALLBACK_URL
         sync: false
       - key: CU_TWILIO_CONTENT_SID_EVENT_INVITE
         sync: false
-      # --- WAHA (set CU_WHATSAPP_PROVIDER=waha to activate) ---------------
-      # Wired to the cu-os-waha service below over Render's private network,
-      # sharing the secrets it generates. Nothing to paste by hand.
-      - key: CU_WAHA_BASE_URL
-        fromService:
-          type: web
-          name: cu-os-waha
-          property: hostport
-      - key: CU_WAHA_API_KEY
-        fromService:
-          type: web
-          name: cu-os-waha
-          envVarKey: WAHA_API_KEY
-      - key: CU_WAHA_WEBHOOK_HMAC_KEY
-        fromService:
-          type: web
-          name: cu-os-waha
-          envVarKey: WHATSAPP_HOOK_HMAC_KEY
-
-  # WAHA: WhatsApp over an ordinary number, logged in as a linked device.
-  # A STOP-GAP while Meta business verification is pending — it is against
-  # WhatsApp's terms and the number can be banned. Scan the QR code once at
-  # https://cu-os-waha.onrender.com/dashboard (user admin, password in this
-  # service's WAHA_DASHBOARD_PASSWORD). The session lives on the disk, so
-  # redeploys do not ask for the QR code again.
-  - type: web
-    name: cu-os-waha
-    runtime: image
-    image:
-      # GOWS decrypts poll votes itself; the default WEBJS image needs a
-      # whole Chromium, and NOWEB needs its message store switched on for
-      # votes to arrive at all.
-      url: docker.io/devlikeapro/waha:gows
-    region: singapore
-    plan: starter
-    # One WhatsApp session, one process. Never scale this out.
-    numInstances: 1
-    healthCheckPath: /ping
-    disk:
-      name: waha-sessions
-      mountPath: /app/.sessions
-      sizeGB: 1
-    envVars:
-      - key: PORT
-        value: "3000"
-      - key: WHATSAPP_API_PORT
-        value: "3000"
-      - key: WHATSAPP_DEFAULT_ENGINE
-        value: GOWS
-      - key: WHATSAPP_START_SESSION
-        value: default
-      - key: WAHA_API_KEY
-        generateValue: true
-      - key: WAHA_DASHBOARD_USERNAME
-        value: admin
-      - key: WAHA_DASHBOARD_PASSWORD
-        generateValue: true
-      # The public URL of the app's WAHA webhook, e.g.
-      #   https://cu-os-api.onrender.com/api/whatsapp/waha/webhook
-      - key: WHATSAPP_HOOK_URL
-        sync: false
-      - key: WHATSAPP_HOOK_EVENTS
-        value: poll.vote,message
-      - key: WHATSAPP_HOOK_HMAC_KEY
-        generateValue: true

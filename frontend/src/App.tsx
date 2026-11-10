@@ -14,6 +14,7 @@ import Events from "./pages/Events";
 import Login from "./pages/Login";
 import People from "./pages/People";
 import Register from "./pages/Register";
+import WhatsAppAdmin from "./pages/WhatsAppAdmin";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -23,17 +24,11 @@ const NAV = [
   { to: "/", label: "Command Centre" },
   { to: "/people", label: "People & tiers" },
   { to: "/events", label: "Events & Academy" },
+  { to: "/whatsapp", label: "WhatsApp" },
 ];
 
 /**
  * The CU lockup, for use on the emerald header and sign-in chip.
- *
- * Typographic rather than the bitmap mark: the `logo-cu.png` shipped in the
- * design project is malformed — its IDAT chunk declares 14,086 bytes but only
- * 13,916 are present, so browsers draw roughly the top 95% and stop. It is also
- * dark artwork, which would need inverting to read on emerald at all. Drop a
- * clean, light-on-transparent asset at `public/logo-cu.png` and swap the
- * wordmark below for an <img>.
  */
 export function Brand({ size = 38 }: { size?: number }) {
   return (
@@ -96,9 +91,6 @@ function Shell({
       </a>
 
       <header className="sticky top-0 z-20 bg-cu-emerald">
-        {/* One row at every width. Below md the links move into a sheet — the
-            previous flex-wrap layout stacked into three rows on a phone and
-            ate roughly half the viewport before any content. */}
         <div className="mx-auto flex min-h-[64px] max-w-[1760px] items-center gap-4 px-4 py-2.5 sm:px-8 lg:px-11">
           <Link to="/" aria-label="Command Centre" className="shrink-0">
             <Brand />
@@ -138,24 +130,25 @@ function Shell({
           </button>
         </div>
 
+        {/* Mobile slide-down navigation sheet */}
         {menuOpen && (
           <div
             id="mobile-menu"
-            className="border-t border-cu-teal-edge/20 px-4 pb-4 pt-2 md:hidden"
+            className="border-t border-cu-teal-edge/25 bg-cu-emerald px-4 pb-5 pt-3 md:hidden"
           >
-            <nav aria-label="Main" className="flex flex-col gap-1">
+            <nav aria-label="Mobile" className="flex flex-col gap-1">
               {NAV.map((item) => navLink(item, true))}
             </nav>
-            <div className="mt-3 flex flex-col gap-2 border-t border-cu-teal-edge/20 pt-3">
+            <div className="mt-4 flex flex-col gap-2 border-t border-cu-teal-edge/25 pt-4">
               <Link
                 to="/register"
-                className="tap-target inline-flex w-full items-center rounded-xl border-[1.5px] border-cu-teal-edge/45 px-4 text-cu-body font-semibold text-cu-teal-edge"
+                className="tap-target flex items-center justify-center rounded-xl border-[1.5px] border-cu-teal-edge/45 py-2.5 text-cu-body font-semibold text-cu-teal-edge hover:bg-cu-teal-tint hover:text-cu-teal-ink"
               >
                 Registration form
               </Link>
               <button
                 onClick={onSignOut}
-                className="tap-target w-full rounded-xl px-4 text-left text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+                className="tap-target flex items-center justify-center rounded-xl py-2.5 text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
               >
                 Sign out
               </button>
@@ -164,10 +157,7 @@ function Shell({
         )}
       </header>
 
-      <main
-        id="main"
-        className="mx-auto flex max-w-[1760px] flex-col gap-7 px-4 pb-16 pt-6 sm:px-8 sm:pt-9 lg:px-11"
-      >
+      <main id="main">
         {children}
       </main>
     </div>
@@ -175,7 +165,7 @@ function Shell({
 }
 
 export default function App() {
-  const [signedIn, setSignedIn] = useState(() => Boolean(getToken()));
+  const [signedIn, setSignedIn] = useState<boolean>(() => Boolean(getToken()));
 
   function signOut() {
     setToken(null);
@@ -206,6 +196,7 @@ export default function App() {
                     <Route path="/" element={<CommandCentre />} />
                     <Route path="/people" element={<People />} />
                     <Route path="/events" element={<Events />} />
+                    <Route path="/whatsapp" element={<WhatsAppAdmin />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Shell>
