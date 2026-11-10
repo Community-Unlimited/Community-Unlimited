@@ -93,6 +93,14 @@ const HEALTH_CONDITION_OPTIONS = [
   },
 ];
 
+const LANGUAGE_PROFICIENCY_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "zh", label: "Chinese (中文)" },
+  { value: "ms", label: "Malay (Bahasa Melayu)" },
+  { value: "ta", label: "Tamil (தமிழ்)" },
+  { value: "other", label: "Other" },
+];
+
 const DAYS = [
   "Monday",
   "Tuesday",
@@ -110,6 +118,8 @@ export default function Register() {
   const [phone, setPhone] = useState("");
   const [ageBand, setAgeBand] = useState("");
   const [language, setLanguage] = useState("en");
+  const [writtenLanguages, setWrittenLanguages] = useState<string[]>([]);
+  const [spokenLanguages, setSpokenLanguages] = useState<string[]>([]);
 
   // Mobility & PMD
   const [mobilityAid, setMobilityAid] = useState("none");
@@ -156,6 +166,8 @@ export default function Register() {
     setPhone("");
     setAgeBand("");
     setLanguage("en");
+    setWrittenLanguages([]);
+    setSpokenLanguages([]);
     setMobilityAid("none");
     setHasHealthConditions(false);
     setHealthConditions([]);
@@ -211,6 +223,8 @@ export default function Register() {
         phone,
         age_band: ageBand || null,
         preferred_language: language,
+        written_languages: writtenLanguages,
+        spoken_languages: spokenLanguages,
         requires_pmd: mobilityAid === "pmd",
         mobility_aid: mobilityAid,
         has_health_conditions:
@@ -356,6 +370,9 @@ export default function Register() {
                 onChange={(e) => setAgeBand(e.target.value)}
               >
                 <option value="">Prefer not to say</option>
+                <option value="<30">Below 30 (&lt;30)</option>
+                <option value="30-40">30 to 40</option>
+                <option value="40-50">40 to 50</option>
                 <option value="50-59">50 to 59</option>
                 <option value="60-69">60 to 69</option>
                 <option value="70-79">70 to 79</option>
@@ -363,7 +380,7 @@ export default function Register() {
               </select>
             </Field>
 
-            <Field label="Preferred language">
+            <Field label="Preferred language" hint="For WhatsApp invites and updates.">
               <select
                 className={inputClass}
                 value={language}
@@ -376,6 +393,79 @@ export default function Register() {
               </select>
             </Field>
           </div>
+          <fieldset>
+            <legend className="mb-1 text-cu-body font-semibold text-cu-ink">
+              Written language proficiency{" "}
+              <span className="font-normal text-cu-body-text">
+                (choose all that apply)
+              </span>
+            </legend>
+            <p className="mb-2.5 text-cu-caption text-cu-body-text">
+              Languages you can read and write comfortably.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {LANGUAGE_PROFICIENCY_OPTIONS.map((opt) => {
+                const selected = writtenLanguages.includes(opt.value);
+                return (
+                  <label
+                    key={opt.value}
+                    className={`tap-target flex cursor-pointer items-center gap-2.5 rounded-cu border px-4 py-2 transition ${
+                      selected
+                        ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                        : "border-cu-line bg-cu-surface hover:bg-cu-teal-tint/60"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-cu-teal-ink"
+                      checked={selected}
+                      onChange={() =>
+                        setWrittenLanguages(toggle(writtenLanguages, opt.value))
+                      }
+                    />
+                    <span className="text-cu-body text-cu-ink">{opt.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-1 text-cu-body font-semibold text-cu-ink">
+              Spoken language proficiency{" "}
+              <span className="font-normal text-cu-body-text">
+                (choose all that apply)
+              </span>
+            </legend>
+            <p className="mb-2.5 text-cu-caption text-cu-body-text">
+              Languages you can speak comfortably.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {LANGUAGE_PROFICIENCY_OPTIONS.map((opt) => {
+                const selected = spokenLanguages.includes(opt.value);
+                return (
+                  <label
+                    key={opt.value}
+                    className={`tap-target flex cursor-pointer items-center gap-2.5 rounded-cu border px-4 py-2 transition ${
+                      selected
+                        ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
+                        : "border-cu-line bg-cu-surface hover:bg-cu-teal-tint/60"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-cu-teal-ink"
+                      checked={selected}
+                      onChange={() =>
+                        setSpokenLanguages(toggle(spokenLanguages, opt.value))
+                      }
+                    />
+                    <span className="text-cu-body text-cu-ink">{opt.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
         </Card>
 
         {/* 2. Mobility & PMD */}

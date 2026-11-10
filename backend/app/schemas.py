@@ -36,6 +36,24 @@ class TokenResponse(BaseModel):
 # registration / people
 # --------------------------------------------------------------------------
 
+AGE_BANDS = (
+    "<30",
+    "30-40",
+    "40-50",
+    "50-59",
+    "60-69",
+    "70-79",
+    "80+",
+)
+
+LANGUAGE_OPTIONS = (
+    "en",
+    "zh",
+    "ms",
+    "ta",
+    "other",
+)
+
 INTERESTS = (
     "coffee",
     "exercise_hosting",
@@ -81,6 +99,8 @@ class RegistrationRequest(BaseModel):
     email: str | None = None
     age_band: str | None = None
     preferred_language: str = "en"
+    written_languages: list[str] = Field(default_factory=list)
+    spoken_languages: list[str] = Field(default_factory=list)
     home_zone: str | None = None
     home_precinct: str | None = None
     interests: list[str] = Field(default_factory=list)
@@ -181,6 +201,27 @@ class RegistrationRequest(BaseModel):
             raise ValueError("health and safety acknowledgement is required to register")
         return v
 
+    @field_validator("age_band")
+    @classmethod
+    def _valid_age_band(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        cleaned = v.strip()
+        if not cleaned:
+            return None
+        if cleaned not in AGE_BANDS:
+            raise ValueError(f"unknown age band: {cleaned}")
+        return cleaned
+
+    @field_validator("written_languages", "spoken_languages")
+    @classmethod
+    def _valid_languages(cls, v: list[str]) -> list[str]:
+        cleaned = [lang.strip().lower() for lang in v if lang and lang.strip()]
+        unknown = [lang for lang in cleaned if lang not in LANGUAGE_OPTIONS]
+        if unknown:
+            raise ValueError(f"unknown languages: {', '.join(unknown)}")
+        return list(dict.fromkeys(cleaned))
+
     @field_validator("interests")
     @classmethod
     def _known_interests(cls, v: list[str]) -> list[str]:
@@ -213,6 +254,8 @@ class PersonOut(ORMModel):
     email: str | None
     age_band: str | None
     preferred_language: str
+    written_languages: list[str] | None = None
+    spoken_languages: list[str] | None = None
     home_zone: str | None
     home_precinct: str | None
     requires_pmd: bool = False

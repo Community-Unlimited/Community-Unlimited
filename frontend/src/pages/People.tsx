@@ -36,6 +36,14 @@ const HEALTH_LABELS: Record<string, string> = {
   other: "Other Condition",
 };
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+  zh: "Chinese",
+  ms: "Malay",
+  ta: "Tamil",
+  other: "Other",
+};
+
 const MOBILITY_LABELS: Record<string, string> = {
   pmd: "PMD Required",
   wheelchair: "Wheelchair",
@@ -286,6 +294,42 @@ export default function People() {
                       </span>
                     )}
                   </div>
+
+                  {(person.age_band ||
+                    (person.written_languages && person.written_languages.length > 0) ||
+                    (person.spoken_languages && person.spoken_languages.length > 0)) && (
+                    <p className="mt-1.5 text-cu-caption text-cu-body-text">
+                      {person.age_band && (
+                        <span>
+                          <strong>Age:</strong> {person.age_band}
+                          {(person.written_languages &&
+                            person.written_languages.length > 0) ||
+                          (person.spoken_languages && person.spoken_languages.length > 0)
+                            ? " · "
+                            : ""}
+                        </span>
+                      )}
+                      {person.written_languages && person.written_languages.length > 0 && (
+                        <span>
+                          <strong>Written:</strong>{" "}
+                          {person.written_languages
+                            .map((l) => LANGUAGE_LABELS[l] ?? l)
+                            .join(", ")}
+                          {person.spoken_languages && person.spoken_languages.length > 0
+                            ? " · "
+                            : ""}
+                        </span>
+                      )}
+                      {person.spoken_languages && person.spoken_languages.length > 0 && (
+                        <span>
+                          <strong>Spoken:</strong>{" "}
+                          {person.spoken_languages
+                            .map((l) => LANGUAGE_LABELS[l] ?? l)
+                            .join(", ")}
+                        </span>
+                      )}
+                    </p>
+                  )}
 
                   {(person.health_notes || person.emergency_contact_name) && (
                     <p className="mt-1.5 text-cu-caption text-cu-body-text">

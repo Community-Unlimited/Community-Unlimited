@@ -23,6 +23,8 @@ export interface Person {
   email: string | null;
   age_band: string | null;
   preferred_language: string;
+  written_languages: string[] | null;
+  spoken_languages: string[] | null;
   home_zone: string | null;
   home_precinct: string | null;
   requires_pmd: boolean;

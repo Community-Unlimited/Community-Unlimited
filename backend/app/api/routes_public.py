@@ -48,6 +48,12 @@ def create_person(db: DbSession, payload: RegistrationRequest) -> Person:
         email=(payload.email or "").strip() or None,
         age_band=payload.age_band,
         preferred_language=payload.preferred_language or "en",
+        written_languages=(
+            list(payload.written_languages) if payload.written_languages else []
+        ),
+        spoken_languages=(
+            list(payload.spoken_languages) if payload.spoken_languages else []
+        ),
         home_zone=(payload.home_zone or "").strip() or None,
         home_precinct=(payload.home_precinct or "").strip() or None,
         requires_pmd=requires_pmd,

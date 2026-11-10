@@ -47,6 +47,9 @@ class Person(Base, TimestampMixin):
         String(STATUS_LEN), default="en", nullable=False
     )
 
+    written_languages: Mapped[list[str] | None] = mapped_column(JSON)
+    spoken_languages: Mapped[list[str] | None] = mapped_column(JSON)
+
     home_zone: Mapped[str | None] = mapped_column(String(120))
     home_precinct: Mapped[str | None] = mapped_column(String(120))
     travel_willingness: Mapped[str | None] = mapped_column(String(STATUS_LEN))

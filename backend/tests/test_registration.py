@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -178,3 +180,54 @@ def test_assisted_registration_rejects_a_duplicate_loudly(
 
 def test_people_list_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/people").status_code == 401
+
+
+@pytest.mark.parametrize("age_band", ["<30", "30-40", "40-50", "50-59", "60-69", "70-79", "80+"])
+def test_supported_age_bands_are_accepted(
+    client: TestClient, age_band: str
+) -> None:
+    response = client.post("/api/register", json=_payload(age_band=age_band))
+    assert response.status_code == 200, response.text
+    assert response.json()["person"]["age_band"] == age_band
+
+
+def test_unknown_age_band_is_rejected(client: TestClient) -> None:
+    response = client.post("/api/register", json=_payload(age_band="10-20"))
+    assert response.status_code == 422
+
+
+def test_written_and_spoken_language_proficiency_stored_and_returned(
+    client: TestClient, auth
+) -> None:
+    response = client.post(
+        "/api/register",
+        json=_payload(
+            age_band="30-40",
+            written_languages=["en", "zh", "en"],
+            spoken_languages=["en", "zh", "ms", "other"],
+        ),
+    )
+    assert response.status_code == 200, response.text
+    person = response.json()["person"]
+    assert person["age_band"] == "30-40"
+    assert person["written_languages"] == ["en", "zh"]
+    assert person["spoken_languages"] == ["en", "zh", "ms", "other"]
+
+    listed = client.get("/api/people", headers=auth)
+    assert listed.status_code == 200, listed.text
+    people = listed.json()
+    assert len(people) == 1
+    assert people[0]["written_languages"] == ["en", "zh"]
+    assert people[0]["spoken_languages"] == ["en", "zh", "ms", "other"]
+
+
+def test_unknown_written_or_spoken_language_is_rejected(client: TestClient) -> None:
+    res_written = client.post(
+        "/api/register", json=_payload(written_languages=["fr"])
+    )
+    assert res_written.status_code == 422
+
+    res_spoken = client.post(
+        "/api/register", json=_payload(spoken_languages=["de"])
+    )
+    assert res_spoken.status_code == 422
