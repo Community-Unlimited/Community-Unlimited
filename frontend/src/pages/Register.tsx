@@ -141,15 +141,10 @@ export default function Register() {
   const [days, setDays] = useState<number[]>([]);
 
   // PDPA & Safety Consents
-  const [consentParticipation, setConsentParticipation] = useState(false);
-  const [consentHealthSafety, setConsentHealthSafety] = useState(false);
-  const [whatsapp, setWhatsapp] = useState(true);
+  const [consentTerms, setConsentTerms] = useState(false);
+  const [whatsapp, setWhatsapp] = useState(false);
   const [photoMedia, setPhotoMedia] = useState(false);
   const [showPdpaNotice, setShowPdpaNotice] = useState(false);
-
-  // Assisted Registration
-  const [assisted, setAssisted] = useState(false);
-  const [assistedBy, setAssistedBy] = useState("");
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -180,13 +175,10 @@ export default function Register() {
     setGrassrootsOrg("");
     setInterests([]);
     setDays([]);
-    setConsentParticipation(false);
-    setConsentHealthSafety(false);
-    setWhatsapp(true);
+    setConsentTerms(false);
+    setWhatsapp(false);
     setPhotoMedia(false);
     setShowPdpaNotice(false);
-    setAssisted(false);
-    setAssistedBy("");
     setError(null);
   }
 
@@ -244,12 +236,12 @@ export default function Register() {
           start_time: "09:00",
           end_time: "12:00",
         })),
-        consent_participation: consentParticipation,
-        consent_health_safety: consentHealthSafety,
+        consent_participation: consentTerms,
+        consent_health_safety: consentTerms,
         consent_whatsapp: whatsapp,
         consent_photo_media: photoMedia,
-        assisted_registration: assisted,
-        assisted_by: assisted ? assistedBy.trim() || null : null,
+        assisted_registration: false,
+        assisted_by: null,
       });
       setDone(result);
     } catch (err) {
@@ -809,9 +801,9 @@ export default function Register() {
               onClick={() => setShowPdpaNotice((v) => !v)}
               className="tap-target flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-cu-body font-semibold text-cu-teal-ink hover:bg-cu-teal-tint/50"
             >
-              <span>Personal Data Protection Notice (PDPA)</span>
+              <span>PDPA Notice &amp; Safety Declaration</span>
               <span className="shrink-0 text-cu-caption font-bold">
-                {showPdpaNotice ? "Hide" : "Read notice"}
+                {showPdpaNotice ? "Hide" : "Read terms"}
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 20 20"
@@ -834,6 +826,7 @@ export default function Register() {
                 className="space-y-2 border-t border-cu-line px-4 py-3 text-cu-caption text-cu-body-text"
               >
                 <p>
+                  <strong className="text-cu-ink">Personal Data (PDPA):</strong>{" "}
                   Community Unlimited collects your name, NRIC (last 3 digits &amp;
                   letter), phone, grassroots affiliation, emergency contact, and
                   health/mobility declarations to:
@@ -853,8 +846,15 @@ export default function Register() {
                   </li>
                 </ul>
                 <p>
-                  You may withdraw consent or request access/correction anytime via a
-                  Community Unlimited coordinator.
+                  <strong className="text-cu-ink">Safety Declaration:</strong> You
+                  confirm your health and mobility details are accurate. Kopi Brewing
+                  uses hot equipment and Workouts involve physical exercise; you agree
+                  to go at your own pace, follow safety instructions, and tell
+                  facilitators immediately if you feel unwell.
+                </p>
+                <p>
+                  You may withdraw consent or request data access/correction anytime via
+                  a Community Unlimited coordinator.
                 </p>
               </div>
             )}
@@ -864,31 +864,15 @@ export default function Register() {
             <input
               type="checkbox"
               className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={consentParticipation}
-              onChange={(e) => setConsentParticipation(e.target.checked)}
+              checked={consentTerms}
+              onChange={(e) => setConsentTerms(e.target.checked)}
               required
             />
             <span className="text-cu-body text-cu-ink">
-              <strong>PDPA Consent:</strong> I consent to Community Unlimited using my
-              personal details for registration, safety/emergency contact, and
-              coordination with community partners.{" "}
-              <span className="text-cu-red">*</span>
-            </span>
-          </label>
-
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={consentHealthSafety}
-              onChange={(e) => setConsentHealthSafety(e.target.checked)}
-              required
-            />
-            <span className="text-cu-body text-cu-ink">
-              <strong>Safety Declaration:</strong> My health and mobility details are
-              accurate. Kopi Brewing uses hot equipment and Workouts involve exercise;
-              I will go at my own pace and tell facilitators if unwell.{" "}
-              <span className="text-cu-red">*</span>
+              <strong>PDPA &amp; Safety Agreement:</strong> I agree to the PDPA Notice
+              and Safety Declaration above (use of my personal data for registration,
+              safety/emergency contact, and partner coordination, and safe participation
+              in Kopi Brewing &amp; Workouts). <span className="text-cu-red">*</span>
             </span>
           </label>
 
@@ -920,33 +904,6 @@ export default function Register() {
               photos/videos being used for community outreach and reporting.
             </span>
           </label>
-
-          <hr className="border-cu-line" />
-
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={assisted}
-              onChange={(e) => setAssisted(e.target.checked)}
-            />
-            <span className="text-cu-body text-cu-ink">
-              I'm filling this in for someone else (Assisted Registration)
-            </span>
-          </label>
-          {assisted && (
-            <Field
-              label="Your name (the volunteer / helper)"
-              hint="Please confirm you have read the PDPA notice and safety declaration to the participant."
-            >
-              <input
-                className={inputClass}
-                value={assistedBy}
-                onChange={(e) => setAssistedBy(e.target.value)}
-                placeholder="e.g. Volunteer Sarah"
-              />
-            </Field>
-          )}
         </Card>
 
         <Button type="submit" disabled={busy} className="w-full">
