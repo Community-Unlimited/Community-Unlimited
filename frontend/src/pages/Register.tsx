@@ -24,12 +24,8 @@ interface RegistrationResult {
 }
 
 const INTERESTS = [
-  { value: "coffee", label: "Kopi brewing / Community café barista" },
-  { value: "exercise_hosting", label: "Workout & exercise sessions" },
-  { value: "digital_support", label: "Helping others with phones and apps" },
-  { value: "facilitation", label: "Bringing neighbours together" },
-  { value: "soundtech", label: "Sound and AV" },
-  { value: "other", label: "Something else" },
+  { value: "coffee", label: "Kopi brewing" },
+  { value: "exercise_hosting", label: "Community workouts" },
 ];
 
 const MOBILITY_OPTIONS = [
@@ -134,7 +130,6 @@ export default function Register() {
 
   // Grassroots Volunteering
   const [isGrassroots, setIsGrassroots] = useState(false);
-  const [grassrootsOrg, setGrassrootsOrg] = useState("");
 
   // Interests & Availability
   const [interests, setInterests] = useState<string[]>([]);
@@ -172,7 +167,6 @@ export default function Register() {
     setEmergencyPhone("");
     setEmergencyRelationship("");
     setIsGrassroots(false);
-    setGrassrootsOrg("");
     setInterests([]);
     setDays([]);
     setConsentTerms(false);
@@ -201,13 +195,6 @@ export default function Register() {
       return;
     }
 
-    if (isGrassroots && !grassrootsOrg.trim()) {
-      setError(
-        "Please tell us which grassroots or community organisation you volunteer with."
-      );
-      return;
-    }
-
     setBusy(true);
     try {
       const result = await post<RegistrationResult>("/api/register", {
@@ -229,7 +216,7 @@ export default function Register() {
         emergency_contact_phone: emergencyPhone.trim() || null,
         emergency_contact_relationship: emergencyRelationship.trim() || null,
         is_grassroots_volunteer: isGrassroots,
-        grassroots_organisation: isGrassroots ? grassrootsOrg.trim() || null : null,
+        grassroots_organisation: null,
         interests,
         availability: days.map((weekday) => ({
           weekday,
@@ -682,10 +669,7 @@ export default function Register() {
                   type="radio"
                   name="is_grassroots"
                   checked={!isGrassroots}
-                  onChange={() => {
-                    setIsGrassroots(false);
-                    setGrassrootsOrg("");
-                  }}
+                  onChange={() => setIsGrassroots(false)}
                   className="h-5 w-5 accent-cu-teal-ink"
                 />
                 <span className="text-cu-body text-cu-ink">No, not currently</span>
@@ -712,21 +696,6 @@ export default function Register() {
             </div>
           </fieldset>
 
-          {isGrassroots && (
-            <Field
-              label="Which grassroots / community organisation(s)?"
-              required
-              hint="E.g. Boon Lay RN, Jurong West CC, Silver Generation Ambassador, AAC."
-            >
-              <input
-                className={inputClass}
-                value={grassrootsOrg}
-                onChange={(e) => setGrassrootsOrg(e.target.value)}
-                required
-                placeholder="e.g. Boon Lay Zone A RN"
-              />
-            </Field>
-          )}
         </Card>
 
         {/* 5. Activities & Availability */}
