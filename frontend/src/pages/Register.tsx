@@ -145,6 +145,7 @@ export default function Register() {
   const [consentHealthSafety, setConsentHealthSafety] = useState(false);
   const [whatsapp, setWhatsapp] = useState(true);
   const [photoMedia, setPhotoMedia] = useState(false);
+  const [showPdpaNotice, setShowPdpaNotice] = useState(false);
 
   // Assisted Registration
   const [assisted, setAssisted] = useState(false);
@@ -183,6 +184,7 @@ export default function Register() {
     setConsentHealthSafety(false);
     setWhatsapp(true);
     setPhotoMedia(false);
+    setShowPdpaNotice(false);
     setAssisted(false);
     setAssistedBy("");
     setError(null);
@@ -796,36 +798,66 @@ export default function Register() {
             rule
             hint="In compliance with Singapore's Personal Data Protection Act (PDPA)."
           >
-            6. PDPA Data Protection &amp; Safety Consent
+            6. PDPA &amp; Safety Consent
           </SectionTitle>
 
-          <div className="rounded-xl border border-cu-border bg-cu-surface p-4 text-cu-caption text-cu-body-text space-y-2">
-            <p className="font-semibold text-cu-ink">
-              Personal Data Protection Notice (PDPA)
-            </p>
-            <p>
-              Community Unlimited collects your personal data (Name, Last 3 digits &amp;
-              letter of NRIC, Mobile Number, Grassroots affiliation, Emergency Contact,
-              and Health/Mobility declarations) for the purposes of:
-            </p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>
-                Verifying identity, managing registration, and coordinating Kopi
-                Brewing &amp; Workout training and community deployments;
-              </li>
-              <li>
-                Ensuring venue accessibility (including PMD space), participant safety,
-                and contacting your Next-of-Kin or medical services in an emergency;
-              </li>
-              <li>
-                Coordinating community programmes with relevant grassroots / community
-                partners in your precinct.
-              </li>
-            </ul>
-            <p>
-              You may withdraw your consent or request access/correction of your data at
-              any time by informing a Community Unlimited coordinator.
-            </p>
+          <div className="rounded-xl border border-cu-border bg-cu-surface">
+            <button
+              type="button"
+              aria-expanded={showPdpaNotice}
+              aria-controls="pdpa-notice-body"
+              onClick={() => setShowPdpaNotice((v) => !v)}
+              className="tap-target flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-cu-body font-semibold text-cu-teal-ink hover:bg-cu-teal-tint/50"
+            >
+              <span>Personal Data Protection Notice (PDPA)</span>
+              <span className="shrink-0 text-cu-caption font-bold">
+                {showPdpaNotice ? "Hide" : "Read notice"}
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className={`inline-block ml-1 h-4 w-4 transition-transform ${
+                    showPdpaNotice ? "rotate-180" : ""
+                  }`}
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+            {showPdpaNotice && (
+              <div
+                id="pdpa-notice-body"
+                className="space-y-2 border-t border-cu-line px-4 py-3 text-cu-caption text-cu-body-text"
+              >
+                <p>
+                  Community Unlimited collects your name, NRIC (last 3 digits &amp;
+                  letter), phone, grassroots affiliation, emergency contact, and
+                  health/mobility declarations to:
+                </p>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>
+                    Verify identity and manage Kopi Brewing &amp; Workout training and
+                    community deployments;
+                  </li>
+                  <li>
+                    Arrange venue accessibility (including PMD space), ensure safety,
+                    and contact your Next-of-Kin in an emergency;
+                  </li>
+                  <li>
+                    Coordinate programmes with grassroots/community partners in your
+                    precinct.
+                  </li>
+                </ul>
+                <p>
+                  You may withdraw consent or request access/correction anytime via a
+                  Community Unlimited coordinator.
+                </p>
+              </div>
+            )}
           </div>
 
           <label className="flex cursor-pointer items-start gap-3">
@@ -837,10 +869,9 @@ export default function Register() {
               required
             />
             <span className="text-cu-body text-cu-ink">
-              <strong>PDPA Personal Data Consent:</strong> I consent to Community
-              Unlimited collecting, using, and disclosing my personal data for
-              programme registration, coordination with community/grassroots partners,
-              and emergency contact purposes as stated above.{" "}
+              <strong>PDPA Consent:</strong> I consent to Community Unlimited using my
+              personal details for registration, safety/emergency contact, and
+              coordination with community partners.{" "}
               <span className="text-cu-red">*</span>
             </span>
           </label>
@@ -854,11 +885,9 @@ export default function Register() {
               required
             />
             <span className="text-cu-body text-cu-ink">
-              <strong>Health &amp; Activity Safety Declaration:</strong> I confirm that
-              my health and mobility declaration is accurate. I understand that Kopi
-              Brewing involves hot water/equipment and Workouts involve physical
-              activity; I will participate at my own pace, follow safety instructions,
-              and inform facilitators immediately if I feel unwell.{" "}
+              <strong>Safety Declaration:</strong> My health and mobility details are
+              accurate. Kopi Brewing uses hot equipment and Workouts involve exercise;
+              I will go at my own pace and tell facilitators if unwell.{" "}
               <span className="text-cu-red">*</span>
             </span>
           </label>
@@ -871,10 +900,10 @@ export default function Register() {
               onChange={(e) => setWhatsapp(e.target.checked)}
             />
             <span className="text-cu-body text-cu-ink">
-              <strong>WhatsApp &amp; Communications (Optional):</strong> Send me session
-              invites, reminders, and community updates on WhatsApp.
+              <strong>WhatsApp Updates (Optional):</strong> Send me session invites
+              and reminders on WhatsApp.
               <span className="block text-cu-caption text-cu-body-text">
-                You can say no and still take part — we'll ring you instead.
+                Say no and we&apos;ll call you instead.
               </span>
             </span>
           </label>
@@ -887,9 +916,8 @@ export default function Register() {
               onChange={(e) => setPhotoMedia(e.target.checked)}
             />
             <span className="text-cu-body text-cu-ink">
-              <strong>Photography &amp; Media (Optional):</strong> I consent to photos
-              and videos taken during Kopi Brewing and Workout events being used for
-              community reporting, outreach, and publicity.
+              <strong>Photos &amp; Videos (Optional):</strong> I consent to event
+              photos/videos being used for community outreach and reporting.
             </span>
           </label>
 
