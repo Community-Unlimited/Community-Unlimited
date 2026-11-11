@@ -12,9 +12,34 @@
  */
 
 import { useState } from "react";
+import logoCu from "@/assets/logo-cu.png";
 import { post } from "../api/client";
 import type { Person, Tier } from "../api/types";
-import { Banner, Button, Card, Field, SectionTitle, inputClass } from "../components/ui";
+import { Banner, Button, Field, SectionTitle } from "../components/ui";
+
+const registerCardClass =
+  "rounded-3xl border border-cu-border bg-cu-panel p-6 shadow-[0_6px_22px_rgba(5,53,49,0.06)] sm:p-8";
+
+const registerInputClass =
+  "tap-target w-full rounded-xl border-[1.5px] border-cu-border-strong bg-cu-surface px-4 py-3 text-cu-body text-cu-ink shadow-[0_1px_2px_rgba(5,53,49,0.04)] transition-all duration-150 placeholder:text-cu-muted hover:border-cu-teal-mid focus:border-cu-teal-ink focus:bg-cu-surface focus:outline-2 focus:outline-transparent focus:ring-4 focus:ring-cu-teal/25";
+
+function optionCardClass(selected: boolean, align: "center" | "start" = "start") {
+  return `tap-target flex cursor-pointer ${
+    align === "center" ? "items-center" : "items-start"
+  } gap-3 rounded-2xl border-[1.5px] px-4 py-3.5 transition-all duration-150 focus-within:border-cu-teal-ink focus-within:ring-4 focus-within:ring-cu-teal/25 ${
+    selected
+      ? "border-cu-teal-ink bg-cu-teal-tint shadow-[0_1px_3px_rgba(14,110,104,0.08)]"
+      : "border-cu-border bg-cu-surface hover:border-cu-teal-mid/80 hover:bg-cu-teal-tint/45"
+  }`;
+}
+
+function chipOptionClass(selected: boolean) {
+  return `tap-target flex cursor-pointer items-center gap-2.5 rounded-xl border-[1.5px] px-4 py-2.5 transition-all duration-150 focus-within:border-cu-teal-ink focus-within:ring-4 focus-within:ring-cu-teal/25 ${
+    selected
+      ? "border-cu-teal-ink bg-cu-teal-tint font-semibold shadow-[0_1px_2px_rgba(14,110,104,0.08)]"
+      : "border-cu-border bg-cu-surface hover:border-cu-teal-mid/80 hover:bg-cu-teal-tint/45"
+  }`;
+}
 
 interface RegistrationResult {
   already_registered: boolean;
@@ -240,45 +265,76 @@ export default function Register() {
 
   if (done) {
     return (
-      <div className="mx-auto max-w-xl">
-        <Card>
-          <h1 className="text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
-            {done.already_registered ? "You're already with us" : "Thank you"}
-          </h1>
-          <p className="mt-3 text-[1.0625rem] text-cu-body-text">{done.message}</p>
-          {done.tier && (
-            <p className="mt-4 rounded-xl bg-cu-teal-tint p-4 text-cu-body text-cu-ink">
-              Your next step is <strong>{done.tier.next_module ?? "to be confirmed"}</strong>.
-              We'll message you on WhatsApp when a session opens.
+      <div className="mx-auto max-w-2xl">
+        <section className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.07)]">
+          <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
+          <div className="p-6 sm:p-8">
+            <img
+              src={logoCu}
+              alt="Community Unlimited"
+              className="h-12 w-auto object-contain sm:h-14"
+            />
+            <h1 className="mt-5 text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
+              {done.already_registered ? "You're already with us" : "Thank you"}
+            </h1>
+            <p className="mt-3 text-[1.0625rem] leading-relaxed text-cu-body-text">
+              {done.message}
             </p>
-          )}
-          <div className="mt-6">
-            <Button variant="ghost" onClick={resetForm}>
-              Register someone else
-            </Button>
+            {done.tier && (
+              <p className="mt-5 rounded-2xl border border-cu-teal-edge/60 bg-cu-teal-tint p-4 text-cu-body text-cu-ink">
+                Your next step is{" "}
+                <strong>{done.tier.next_module ?? "to be confirmed"}</strong>.
+                We&apos;ll message you on WhatsApp when a session opens.
+              </p>
+            )}
+            <div className="mt-6">
+              <Button
+                variant="ghost"
+                onClick={resetForm}
+                className="focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-4 focus-visible:ring-cu-teal-ink/25"
+              >
+                Register someone else
+              </Button>
+            </div>
           </div>
-        </Card>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <h1 className="text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
-        Join Community Unlimited
-      </h1>
-      <p className="mt-2 text-[1.0625rem] text-cu-body-text">
-        Age is not the limit. Disconnection is. Register below for our{" "}
-        <strong>Kopi Brewing</strong> and <strong>Community Workout</strong>{" "}
-        sessions — tell us how to reach you and how we can keep you safe and
-        comfortable.
-      </p>
+    <div className="mx-auto max-w-2xl">
+      <header className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.07)]">
+        <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
+        <div className="p-6 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <img
+              src={logoCu}
+              alt="Community Unlimited"
+              className="h-12 w-auto object-contain sm:h-14"
+            />
+            <span className="inline-flex items-center rounded-full border border-cu-teal-edge bg-cu-teal-tint px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.08em] text-cu-teal-ink">
+              Community Registration
+            </span>
+          </div>
+          <h1 className="mt-5 text-cu-h1 font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
+            Join Community Unlimited
+          </h1>
+          <p className="mt-3 text-[1.0625rem] leading-relaxed text-cu-body-text">
+            Age is not the limit. Disconnection is. Register below for our{" "}
+            <strong className="font-semibold text-cu-ink">Kopi Brewing</strong> and{" "}
+            <strong className="font-semibold text-cu-ink">Community Workout</strong>{" "}
+            sessions — tell us how to reach you and how we can keep you safe and
+            comfortable.
+          </p>
+        </div>
+      </header>
 
-      <form onSubmit={submit} className="mt-6 space-y-5">
+      <form onSubmit={submit} className="mt-6 space-y-6">
         {error && <Banner tone="red">{error}</Banner>}
 
         {/* 1. Identity & Contact */}
-        <Card className="space-y-5">
+        <section className={`${registerCardClass} space-y-6`}>
           <SectionTitle
             rule
             hint="Required for event attendance, verification, and sending session updates."
@@ -288,7 +344,7 @@ export default function Register() {
 
           <Field label="Preferred name" required hint="What would you like to be called?">
             <input
-              className={inputClass}
+              className={registerInputClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -302,7 +358,7 @@ export default function Register() {
             hint="Optional. Helpful for official event attendance and certificates."
           >
             <input
-              className={inputClass}
+              className={registerInputClass}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               autoComplete="name"
@@ -310,14 +366,14 @@ export default function Register() {
             />
           </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field
               label="Last 3 digits & letter of NRIC"
               required
               hint="E.g. 123A (do not enter your full NRIC)."
             >
               <input
-                className={`${inputClass} uppercase`}
+                className={`${registerInputClass} uppercase`}
                 value={nricLast4}
                 onChange={(e) => setNricLast4(e.target.value.toUpperCase())}
                 required
@@ -332,7 +388,7 @@ export default function Register() {
               hint="Singapore number for WhatsApp invites."
             >
               <input
-                className={inputClass}
+                className={registerInputClass}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -343,10 +399,10 @@ export default function Register() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Age group" hint="Helps us plan suitable sessions.">
               <select
-                className={inputClass}
+                className={registerInputClass}
                 value={ageBand}
                 onChange={(e) => setAgeBand(e.target.value)}
               >
@@ -363,7 +419,7 @@ export default function Register() {
 
             <Field label="Preferred language" hint="For WhatsApp invites and updates.">
               <select
-                className={inputClass}
+                className={registerInputClass}
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
               >
@@ -374,6 +430,7 @@ export default function Register() {
               </select>
             </Field>
           </div>
+
           <fieldset>
             <legend className="mb-1 text-cu-body font-semibold text-cu-ink">
               Written language proficiency{" "}
@@ -381,21 +438,14 @@ export default function Register() {
                 (choose all that apply)
               </span>
             </legend>
-            <p className="mb-2.5 text-cu-caption text-cu-body-text">
+            <p className="mb-3 text-cu-caption text-cu-body-text">
               Languages you can read and write comfortably.
             </p>
             <div className="flex flex-wrap gap-2.5">
               {LANGUAGE_PROFICIENCY_OPTIONS.map((opt) => {
                 const selected = writtenLanguages.includes(opt.value);
                 return (
-                  <label
-                    key={opt.value}
-                    className={`tap-target flex cursor-pointer items-center gap-2.5 rounded-cu border px-4 py-2 transition ${
-                      selected
-                        ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                        : "border-cu-line bg-cu-surface hover:bg-cu-teal-tint/60"
-                    }`}
-                  >
+                  <label key={opt.value} className={chipOptionClass(selected)}>
                     <input
                       type="checkbox"
                       className="h-5 w-5 accent-cu-teal-ink"
@@ -418,21 +468,14 @@ export default function Register() {
                 (choose all that apply)
               </span>
             </legend>
-            <p className="mb-2.5 text-cu-caption text-cu-body-text">
+            <p className="mb-3 text-cu-caption text-cu-body-text">
               Languages you can speak comfortably.
             </p>
             <div className="flex flex-wrap gap-2.5">
               {LANGUAGE_PROFICIENCY_OPTIONS.map((opt) => {
                 const selected = spokenLanguages.includes(opt.value);
                 return (
-                  <label
-                    key={opt.value}
-                    className={`tap-target flex cursor-pointer items-center gap-2.5 rounded-cu border px-4 py-2 transition ${
-                      selected
-                        ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                        : "border-cu-line bg-cu-surface hover:bg-cu-teal-tint/60"
-                    }`}
-                  >
+                  <label key={opt.value} className={chipOptionClass(selected)}>
                     <input
                       type="checkbox"
                       className="h-5 w-5 accent-cu-teal-ink"
@@ -447,10 +490,10 @@ export default function Register() {
               })}
             </div>
           </fieldset>
-        </Card>
+        </section>
 
         {/* 2. Mobility & PMD */}
-        <Card className="space-y-4">
+        <section className={`${registerCardClass} space-y-5`}>
           <SectionTitle
             rule
             hint="Helps us arrange counter space for Kopi Brewing, seated Workout options, and PMD parking."
@@ -463,31 +506,24 @@ export default function Register() {
               Do you require a Personal Mobility Device (PMD) or mobility aid?{" "}
               <span className="text-cu-red">*</span>
             </legend>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {MOBILITY_OPTIONS.map((option) => {
                 const selected = mobilityAid === option.value;
                 return (
-                  <label
-                    key={option.value}
-                    className={`tap-target flex cursor-pointer items-start gap-3 rounded-cu border px-4 py-3 transition ${
-                      selected
-                        ? "border-cu-teal-ink bg-cu-teal-tint"
-                        : "border-cu-line hover:bg-cu-teal-tint/60"
-                    }`}
-                  >
+                  <label key={option.value} className={optionCardClass(selected)}>
                     <input
                       type="radio"
                       name="mobility_aid"
                       value={option.value}
                       checked={selected}
                       onChange={() => setMobilityAid(option.value)}
-                      className="mt-1 h-5 w-5 accent-cu-teal-ink"
+                      className="mt-1 h-5 w-5 shrink-0 accent-cu-teal-ink"
                     />
                     <span>
                       <span className="block text-cu-body font-semibold text-cu-ink">
                         {option.label}
                       </span>
-                      <span className="block text-cu-caption text-cu-body-text">
+                      <span className="mt-0.5 block text-cu-caption text-cu-body-text">
                         {option.hint}
                       </span>
                     </span>
@@ -496,10 +532,10 @@ export default function Register() {
               })}
             </div>
           </fieldset>
-        </Card>
+        </section>
 
         {/* 3. Health Conditions & Emergency Contact */}
-        <Card className="space-y-5">
+        <section className={`${registerCardClass} space-y-6`}>
           <SectionTitle
             rule
             hint="Kopi Brewing involves hot water/equipment and Workouts involve physical exercise. Please share any conditions so we can look out for you."
@@ -512,14 +548,8 @@ export default function Register() {
               Do you have any medical or health conditions we should be aware of?{" "}
               <span className="text-cu-red">*</span>
             </legend>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <label
-                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
-                  !hasHealthConditions
-                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                    : "border-cu-line hover:bg-cu-teal-tint/60"
-                }`}
-              >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className={optionCardClass(!hasHealthConditions, "center")}>
                 <input
                   type="radio"
                   name="has_health"
@@ -529,28 +559,30 @@ export default function Register() {
                     setHealthConditions([]);
                     setHealthNotes("");
                   }}
-                  className="h-5 w-5 accent-cu-teal-ink"
+                  className="h-5 w-5 shrink-0 accent-cu-teal-ink"
                 />
-                <span className="text-cu-body text-cu-ink">
+                <span
+                  className={`text-cu-body text-cu-ink ${
+                    !hasHealthConditions ? "font-semibold" : ""
+                  }`}
+                >
                   No — I have no known conditions
                 </span>
               </label>
 
-              <label
-                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
-                  hasHealthConditions
-                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                    : "border-cu-line hover:bg-cu-teal-tint/60"
-                }`}
-              >
+              <label className={optionCardClass(hasHealthConditions, "center")}>
                 <input
                   type="radio"
                   name="has_health"
                   checked={hasHealthConditions}
                   onChange={() => setHasHealthConditions(true)}
-                  className="h-5 w-5 accent-cu-teal-ink"
+                  className="h-5 w-5 shrink-0 accent-cu-teal-ink"
                 />
-                <span className="text-cu-body text-cu-ink">
+                <span
+                  className={`text-cu-body text-cu-ink ${
+                    hasHealthConditions ? "font-semibold" : ""
+                  }`}
+                >
                   Yes — I want to declare a condition
                 </span>
               </label>
@@ -558,35 +590,35 @@ export default function Register() {
           </fieldset>
 
           {hasHealthConditions && (
-            <div className="space-y-4 rounded-xl border border-cu-border bg-cu-surface p-4">
+            <div className="space-y-5 rounded-2xl border border-cu-border bg-cu-surface p-5 shadow-[0_2px_8px_rgba(5,53,49,0.04)]">
               <fieldset>
-                <legend className="mb-2.5 text-cu-body font-semibold text-cu-ink">
+                <legend className="mb-3 text-cu-body font-semibold text-cu-ink">
                   Please tick any conditions that apply to you:
                 </legend>
-                <div className="space-y-2">
-                  {HEALTH_CONDITION_OPTIONS.map((item) => (
-                    <label
-                      key={item.value}
-                      className="tap-target flex cursor-pointer items-start gap-3 rounded-cu border border-cu-line px-3.5 py-2.5 hover:bg-cu-teal-tint"
-                    >
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-5 w-5 accent-cu-teal-ink"
-                        checked={healthConditions.includes(item.value)}
-                        onChange={() =>
-                          setHealthConditions(toggle(healthConditions, item.value))
-                        }
-                      />
-                      <span>
-                        <span className="block text-cu-body font-medium text-cu-ink">
-                          {item.label}
+                <div className="space-y-2.5">
+                  {HEALTH_CONDITION_OPTIONS.map((item) => {
+                    const selected = healthConditions.includes(item.value);
+                    return (
+                      <label key={item.value} className={optionCardClass(selected)}>
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-5 w-5 shrink-0 accent-cu-teal-ink"
+                          checked={selected}
+                          onChange={() =>
+                            setHealthConditions(toggle(healthConditions, item.value))
+                          }
+                        />
+                        <span>
+                          <span className="block text-cu-body font-medium text-cu-ink">
+                            {item.label}
+                          </span>
+                          <span className="mt-0.5 block text-cu-caption text-cu-body-text">
+                            {item.hint}
+                          </span>
                         </span>
-                        <span className="block text-cu-caption text-cu-body-text">
-                          {item.hint}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
+                      </label>
+                    );
+                  })}
                 </div>
               </fieldset>
 
@@ -595,7 +627,7 @@ export default function Register() {
                 hint="E.g. type of allergy, medication carried, or if you need a chair during sessions."
               >
                 <textarea
-                  className={inputClass}
+                  className={registerInputClass}
                   rows={3}
                   value={healthNotes}
                   onChange={(e) => setHealthNotes(e.target.value)}
@@ -605,14 +637,14 @@ export default function Register() {
             </div>
           )}
 
-          <div className="border-t border-cu-line pt-4">
-            <p className="mb-3 text-cu-body font-semibold text-cu-ink">
+          <div className="border-t border-cu-border pt-5">
+            <p className="mb-3.5 text-cu-body font-semibold text-cu-ink">
               Emergency Contact (Next-of-Kin)
             </p>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field label="Contact name" required>
                 <input
-                  className={inputClass}
+                  className={registerInputClass}
                   value={emergencyName}
                   onChange={(e) => setEmergencyName(e.target.value)}
                   required
@@ -622,7 +654,7 @@ export default function Register() {
 
               <Field label="Contact mobile" required>
                 <input
-                  className={inputClass}
+                  className={registerInputClass}
                   value={emergencyPhone}
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   required
@@ -633,7 +665,7 @@ export default function Register() {
 
               <Field label="Relationship">
                 <input
-                  className={inputClass}
+                  className={registerInputClass}
                   value={emergencyRelationship}
                   onChange={(e) => setEmergencyRelationship(e.target.value)}
                   placeholder="e.g. Daughter / Spouse"
@@ -641,10 +673,10 @@ export default function Register() {
               </Field>
             </div>
           </div>
-        </Card>
+        </section>
 
         {/* 4. Grassroots Volunteering */}
-        <Card className="space-y-4">
+        <section className={`${registerCardClass} space-y-5`}>
           <SectionTitle
             rule
             hint="Let us know if you already serve in a Residents' Network (RN), RC/NC, CC, Active Ageing Centre (AAC), or PA grassroots group."
@@ -657,49 +689,46 @@ export default function Register() {
               Are you currently volunteering with any grassroots or community
               organisation? <span className="text-cu-red">*</span>
             </legend>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <label
-                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
-                  !isGrassroots
-                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                    : "border-cu-line hover:bg-cu-teal-tint/60"
-                }`}
-              >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className={optionCardClass(!isGrassroots, "center")}>
                 <input
                   type="radio"
                   name="is_grassroots"
                   checked={!isGrassroots}
                   onChange={() => setIsGrassroots(false)}
-                  className="h-5 w-5 accent-cu-teal-ink"
+                  className="h-5 w-5 shrink-0 accent-cu-teal-ink"
                 />
-                <span className="text-cu-body text-cu-ink">No, not currently</span>
+                <span
+                  className={`text-cu-body text-cu-ink ${
+                    !isGrassroots ? "font-semibold" : ""
+                  }`}
+                >
+                  No, not currently
+                </span>
               </label>
 
-              <label
-                className={`tap-target flex cursor-pointer items-center gap-3 rounded-cu border px-4 py-3 ${
-                  isGrassroots
-                    ? "border-cu-teal-ink bg-cu-teal-tint font-semibold"
-                    : "border-cu-line hover:bg-cu-teal-tint/60"
-                }`}
-              >
+              <label className={optionCardClass(isGrassroots, "center")}>
                 <input
                   type="radio"
                   name="is_grassroots"
                   checked={isGrassroots}
                   onChange={() => setIsGrassroots(true)}
-                  className="h-5 w-5 accent-cu-teal-ink"
+                  className="h-5 w-5 shrink-0 accent-cu-teal-ink"
                 />
-                <span className="text-cu-body text-cu-ink">
+                <span
+                  className={`text-cu-body text-cu-ink ${
+                    isGrassroots ? "font-semibold" : ""
+                  }`}
+                >
                   Yes, I volunteer in grassroots
                 </span>
               </label>
             </div>
           </fieldset>
-
-        </Card>
+        </section>
 
         {/* 5. Activities & Availability */}
-        <Card className="space-y-5">
+        <section className={`${registerCardClass} space-y-6`}>
           <SectionTitle rule>5. Activities &amp; Availability</SectionTitle>
 
           <fieldset>
@@ -707,21 +736,30 @@ export default function Register() {
               What would you enjoy?{" "}
               <span className="font-normal text-cu-body-text">(choose any)</span>
             </legend>
-            <div className="space-y-2">
-              {INTERESTS.map((interest) => (
-                <label
-                  key={interest.value}
-                  className="tap-target flex cursor-pointer items-center gap-3 rounded-cu border border-cu-line px-4 py-2 hover:bg-cu-teal-tint"
-                >
-                  <input
-                    type="checkbox"
-                    className="h-5 w-5 accent-cu-teal-ink"
-                    checked={interests.includes(interest.value)}
-                    onChange={() => setInterests(toggle(interests, interest.value))}
-                  />
-                  <span className="text-cu-body text-cu-ink">{interest.label}</span>
-                </label>
-              ))}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {INTERESTS.map((interest) => {
+                const selected = interests.includes(interest.value);
+                return (
+                  <label
+                    key={interest.value}
+                    className={optionCardClass(selected, "center")}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 shrink-0 accent-cu-teal-ink"
+                      checked={selected}
+                      onChange={() => setInterests(toggle(interests, interest.value))}
+                    />
+                    <span
+                      className={`text-cu-body text-cu-ink ${
+                        selected ? "font-semibold" : ""
+                      }`}
+                    >
+                      {interest.label}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
           </fieldset>
 
@@ -730,7 +768,7 @@ export default function Register() {
               Which mornings are usually free?{" "}
               <span className="font-normal text-cu-body-text">(optional)</span>
             </legend>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {DAYS.map((day, index) => {
                 const on = days.includes(index);
                 return (
@@ -739,10 +777,10 @@ export default function Register() {
                     key={day}
                     aria-pressed={on}
                     onClick={() => setDays(toggle(days, index))}
-                    className={`tap-target rounded-cu border px-4 py-2 text-cu-body font-medium ${
+                    className={`tap-target rounded-xl border-[1.5px] px-4 py-2 text-cu-body font-medium transition-all duration-150 focus:outline-2 focus:outline-transparent focus-visible:border-cu-teal-ink focus-visible:ring-4 focus-visible:ring-cu-teal/25 ${
                       on
-                        ? "border-cu-teal-ink bg-cu-teal-ink text-white"
-                        : "border-cu-line bg-cu-surface text-cu-ink hover:bg-cu-teal-tint"
+                        ? "border-cu-teal-ink bg-cu-teal-ink text-white shadow-[0_2px_6px_rgba(14,110,104,0.2)]"
+                        : "border-cu-border bg-cu-surface text-cu-ink hover:border-cu-teal-mid/80 hover:bg-cu-teal-tint/50"
                     }`}
                   >
                     {day.slice(0, 3)}
@@ -751,10 +789,10 @@ export default function Register() {
               })}
             </div>
           </fieldset>
-        </Card>
+        </section>
 
         {/* 6. PDPA Data Protection & Safety Consent */}
-        <Card className="space-y-4">
+        <section className={`${registerCardClass} space-y-5`}>
           <SectionTitle
             rule
             hint="In compliance with Singapore's Personal Data Protection Act (PDPA)."
@@ -762,13 +800,13 @@ export default function Register() {
             6. PDPA &amp; Safety Consent
           </SectionTitle>
 
-          <div className="rounded-xl border border-cu-border bg-cu-surface">
+          <div className="overflow-hidden rounded-2xl border border-cu-border bg-cu-surface">
             <button
               type="button"
               aria-expanded={showPdpaNotice}
               aria-controls="pdpa-notice-body"
               onClick={() => setShowPdpaNotice((v) => !v)}
-              className="tap-target flex w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left text-cu-body font-semibold text-cu-teal-ink hover:bg-cu-teal-tint/50"
+              className="tap-target flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3.5 text-left text-cu-body font-semibold text-cu-teal-ink transition-colors duration-150 hover:bg-cu-teal-tint/50 focus:outline-2 focus:outline-transparent focus-visible:ring-4 focus-visible:ring-cu-teal/25"
             >
               <span>PDPA Notice &amp; Safety Declaration</span>
               <span className="shrink-0 text-cu-caption font-bold">
@@ -777,7 +815,7 @@ export default function Register() {
                   aria-hidden="true"
                   viewBox="0 0 20 20"
                   fill="currentColor"
-                  className={`inline-block ml-1 h-4 w-4 transition-transform ${
+                  className={`ml-1 inline-block h-4 w-4 transition-transform ${
                     showPdpaNotice ? "rotate-180" : ""
                   }`}
                 >
@@ -792,7 +830,7 @@ export default function Register() {
             {showPdpaNotice && (
               <div
                 id="pdpa-notice-body"
-                className="space-y-2 border-t border-cu-line px-4 py-3 text-cu-caption text-cu-body-text"
+                className="space-y-2 border-t border-cu-line px-4 py-3.5 text-cu-caption leading-relaxed text-cu-body-text"
               >
                 <p>
                   <strong className="text-cu-ink">Personal Data (PDPA):</strong>{" "}
@@ -829,59 +867,68 @@ export default function Register() {
             )}
           </div>
 
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={consentTerms}
-              onChange={(e) => setConsentTerms(e.target.checked)}
-              required
-            />
-            <span className="text-cu-body text-cu-ink">
-              <strong>PDPA &amp; Safety Agreement:</strong> I agree to the PDPA Notice
-              and Safety Declaration above (use of my personal data for registration,
-              safety/emergency contact, and partner coordination, and safe participation
-              in Kopi Brewing &amp; Workouts). <span className="text-cu-red">*</span>
-            </span>
-          </label>
-
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.checked)}
-            />
-            <span className="text-cu-body text-cu-ink">
-              <strong>WhatsApp Updates (Optional):</strong> Send me session invites
-              and reminders on WhatsApp.
-              <span className="block text-cu-caption text-cu-body-text">
-                Say no and we&apos;ll call you instead.
+          <div className="space-y-3">
+            <label className={optionCardClass(consentTerms)}>
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 shrink-0 accent-cu-teal-ink"
+                checked={consentTerms}
+                onChange={(e) => setConsentTerms(e.target.checked)}
+                required
+              />
+              <span className="text-cu-body text-cu-ink">
+                <strong>PDPA &amp; Safety Agreement:</strong> I agree to the PDPA
+                Notice and Safety Declaration above (use of my personal data for
+                registration, safety/emergency contact, and partner coordination, and
+                safe participation in Kopi Brewing &amp; Workouts).{" "}
+                <span className="text-cu-red">*</span>
               </span>
-            </span>
-          </label>
+            </label>
 
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 h-5 w-5 accent-cu-teal-ink"
-              checked={photoMedia}
-              onChange={(e) => setPhotoMedia(e.target.checked)}
-            />
-            <span className="text-cu-body text-cu-ink">
-              <strong>Photos &amp; Videos (Optional):</strong> I consent to event
-              photos/videos being used for community outreach and reporting.
-            </span>
-          </label>
-        </Card>
+            <label className={optionCardClass(whatsapp)}>
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 shrink-0 accent-cu-teal-ink"
+                checked={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.checked)}
+              />
+              <span className="text-cu-body text-cu-ink">
+                <strong>WhatsApp Updates (Optional):</strong> Send me session invites
+                and reminders on WhatsApp.
+                <span className="mt-0.5 block text-cu-caption text-cu-body-text">
+                  Say no and we&apos;ll call you instead.
+                </span>
+              </span>
+            </label>
 
-        <Button type="submit" disabled={busy} className="w-full">
-          {busy ? "Sending…" : "Complete Registration"}
-        </Button>
-        <p className="text-center text-cu-caption text-cu-body-text">
-          Prefer paper or a phone call? Ask any Community Unlimited volunteer —
-          they can register you in person.
-        </p>
+            <label className={optionCardClass(photoMedia)}>
+              <input
+                type="checkbox"
+                className="mt-1 h-5 w-5 shrink-0 accent-cu-teal-ink"
+                checked={photoMedia}
+                onChange={(e) => setPhotoMedia(e.target.checked)}
+              />
+              <span className="text-cu-body text-cu-ink">
+                <strong>Photos &amp; Videos (Optional):</strong> I consent to event
+                photos/videos being used for community outreach and reporting.
+              </span>
+            </label>
+          </div>
+        </section>
+
+        <div className="space-y-3 pt-1">
+          <Button
+            type="submit"
+            disabled={busy}
+            className="w-full py-3.5 text-[1.0625rem] shadow-[0_6px_18px_rgba(234,92,42,0.22)] focus-visible:outline-2 focus-visible:outline-transparent focus-visible:ring-4 focus-visible:ring-cu-teal-ink/30"
+          >
+            {busy ? "Sending…" : "Complete Registration"}
+          </Button>
+          <p className="text-center text-cu-caption text-cu-body-text">
+            Prefer paper or a phone call? Ask any Community Unlimited volunteer —
+            they can register you in person.
+          </p>
+        </div>
       </form>
     </div>
   );
