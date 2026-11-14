@@ -72,7 +72,6 @@ function Shell({
 }) {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const currentNav =
     NAV.find((item) => item.to === pathname) ?? NAV[0];
@@ -83,10 +82,7 @@ function Shell({
       <Link
         key={item.to}
         to={item.to}
-        onClick={() => {
-          setMenuOpen(false);
-          setUserMenuOpen(false);
-        }}
+        onClick={() => setMenuOpen(false)}
         aria-current={active ? "page" : undefined}
         className={`tap-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm whitespace-nowrap transition ${
           stacked ? "w-full rounded-xl px-4 py-2.5 text-cu-body" : ""
@@ -114,10 +110,7 @@ function Shell({
         <div className="mx-auto flex min-h-[64px] max-w-[1760px] items-center gap-3 px-4 py-2.5 sm:px-8 lg:px-11">
           <Link
             to="/"
-            onClick={() => {
-              setMenuOpen(false);
-              setUserMenuOpen(false);
-            }}
+            onClick={() => setMenuOpen(false)}
             aria-label="Command Centre"
             className="shrink-0"
           >
@@ -136,50 +129,26 @@ function Shell({
               + Add Member
             </Link>
 
-            {/* Desktop operator badge & menu */}
-            <div className="relative hidden lg:block">
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen((v) => !v)}
-                aria-expanded={userMenuOpen}
-                aria-label="Operator menu"
-                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white transition hover:bg-white/20"
-              >
-                RT
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-cu-border bg-cu-surface p-1.5 text-cu-ink shadow-xl">
-                  <Link
-                    to="/register"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="block rounded-xl px-3.5 py-2 text-sm font-semibold text-cu-ink hover:bg-cu-teal-tint hover:text-cu-teal-ink"
-                  >
-                    Registration form
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      onSignOut();
-                    }}
-                    className="w-full rounded-xl px-3.5 py-2 text-left text-sm font-semibold text-cu-red hover:bg-cu-red-tint"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="hidden whitespace-nowrap rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-semibold text-cu-teal-edge transition hover:bg-white/20 hover:text-white lg:inline-flex"
+            >
+              Sign out
+            </button>
 
-            {/* Mobile operator badge + nav toggle */}
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
               aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white transition hover:bg-white/20 lg:hidden"
+              className="tap-target inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 lg:hidden"
             >
-              {menuOpen ? "✕" : "RT"}
+              <span aria-hidden="true" className="text-base leading-none">
+                {menuOpen ? "✕" : "☰"}
+              </span>
+              Menu
             </button>
           </div>
         </div>
