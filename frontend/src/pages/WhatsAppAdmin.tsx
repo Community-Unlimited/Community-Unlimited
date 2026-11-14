@@ -49,7 +49,7 @@ export default function WhatsAppAdmin() {
   const isStarting = status?.state === "starting" || connectMutation.isPending;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-8">
+    <div className="mx-auto w-full max-w-[1200px] space-y-6">
       <SectionTitle
         hint="Manage the WhatsApp account used to send official volunteer invites and capture RSVPs."
         rule

@@ -14,6 +14,19 @@ export interface Tier {
   next_module: string | null;
 }
 
+export interface AvailabilitySlot {
+  weekday: number;
+  start_time: string;
+  end_time: string;
+}
+
+export interface ConsentRecord {
+  consent_type: string;
+  granted: boolean;
+  granted_at: string | null;
+  method: string | null;
+}
+
 export interface Person {
   id: number;
   preferred_name: string;
@@ -40,9 +53,13 @@ export interface Person {
   status: string;
   registration_source: string;
   assisted_registration: boolean;
+  assisted_by?: string | null;
   disciple_status: string | null;
+  notes?: string | null;
   created_at: string;
   interests: string[];
+  availability?: AvailabilitySlot[];
+  consents?: ConsentRecord[];
   tier: Tier | null;
 }
 

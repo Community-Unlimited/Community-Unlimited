@@ -130,7 +130,7 @@ export default function People() {
   return (
     <>
       <div>
-        <h1 className="text-cu-h1 font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald">
+        <h1 className="text-[1.875rem] font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald sm:text-cu-h1">
           People &amp; tiers
         </h1>
         <p className="mt-1.5 max-w-[70ch] text-[1.0625rem] text-cu-body-text">
@@ -147,7 +147,7 @@ export default function People() {
       )}
 
       {summary && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(185px,1fr))] gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCell label="Registered" value={summary.registered} />
           <StatCell label="Deployment-ready" value={summary.deployable} />
           <StatCell
@@ -164,7 +164,7 @@ export default function People() {
 
       {/* --- filters ----------------------------------------------------- */}
       <Card>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] items-end gap-4">
+        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
           <Field label="Search people">
             <input
               className={inputClass}
@@ -200,7 +200,7 @@ export default function People() {
           <div id="pipeline-h">
             <SectionTitle rule>Pipeline</SectionTitle>
           </div>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             {[...CORE, ...LEADERSHIP].map((code) => {
               const count = summary.by_module[code] ?? 0;
               const isCore = CORE.includes(code);

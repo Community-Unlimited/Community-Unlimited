@@ -231,3 +231,48 @@ def test_unknown_written_or_spoken_language_is_rejected(client: TestClient) -> N
         "/api/register", json=_payload(spoken_languages=["de"])
     )
     assert res_spoken.status_code == 422
+
+
+def test_people_list_returns_signup_details_and_supports_sort_and_nric_search(
+    client: TestClient, auth
+) -> None:
+    client.post(
+        "/api/register",
+        json=_payload(
+            preferred_name="Zed",
+            phone="91112222",
+            nric_last4="456B",
+            consent_whatsapp=False,
+        ),
+    )
+    client.post(
+        "/api/people",
+        json=_payload(
+            preferred_name="Amy",
+            phone="93334444",
+            nric_last4="789C",
+            assisted_by="Staff Jane",
+            consent_whatsapp=True,
+        ),
+        headers=auth,
+    )
+
+    newest = client.get("/api/people?sort=newest", headers=auth)
+    assert newest.status_code == 200, newest.text
+    rows = newest.json()
+    assert [r["preferred_name"] for r in rows] == ["Amy", "Zed"]
+    assert rows[0]["assisted_by"] == "Staff Jane"
+    assert len(rows[0]["availability"]) == 1
+    assert rows[0]["availability"][0]["weekday"] == 0
+    consents_amy = {c["consent_type"]: c["granted"] for c in rows[0]["consents"]}
+    assert consents_amy["whatsapp_messaging"] is True
+    consents_zed = {c["consent_type"]: c["granted"] for c in rows[1]["consents"]}
+    assert consents_zed["whatsapp_messaging"] is False
+
+    oldest = client.get("/api/people?sort=oldest", headers=auth)
+    assert oldest.status_code == 200
+    assert [r["preferred_name"] for r in oldest.json()] == ["Zed", "Amy"]
+
+    by_nric = client.get("/api/people?search=456B", headers=auth)
+    assert by_nric.status_code == 200
+    assert [r["preferred_name"] for r in by_nric.json()] == ["Zed"]

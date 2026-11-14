@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
+from sqlalchemy.orm import selectinload
 
 from app.api.routes_public import create_person
 from app.deps import CurrentStaff, DbSession
@@ -31,9 +34,21 @@ def list_people(
         description="Return only people missing this module code, e.g. CB4. "
         "Answers 27.2: 'who is missing only one CB module?'",
     ),
-    limit: int = Query(default=200, le=1000),
+    sort: Literal["name", "newest", "oldest"] = Query(default="name"),
+    limit: int = Query(default=200, le=5000),
 ) -> list[PersonDetailOut]:
-    stmt = select(Person).order_by(Person.preferred_name)
+    stmt = select(Person).options(
+        selectinload(Person.interests),
+        selectinload(Person.availability),
+        selectinload(Person.consents),
+    )
+    if sort == "newest":
+        stmt = stmt.order_by(Person.created_at.desc(), Person.id.desc())
+    elif sort == "oldest":
+        stmt = stmt.order_by(Person.created_at.asc(), Person.id.asc())
+    else:
+        stmt = stmt.order_by(Person.preferred_name)
+
     if search:
         pattern = f"%{search.strip()}%"
         stmt = stmt.where(
@@ -41,6 +56,8 @@ def list_people(
                 Person.preferred_name.ilike(pattern),
                 Person.full_name.ilike(pattern),
                 Person.phone_e164.ilike(pattern),
+                Person.nric_last4.ilike(pattern),
+                Person.email.ilike(pattern),
             )
         )
 

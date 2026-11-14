@@ -7,12 +7,12 @@
  * its job is to surface contradictions rather than celebrate totals.
  */
 
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "../api/client";
 import type { Finding, LaunchControl, Severity } from "../api/types";
 import {
   Banner,
-  Button,
   Card,
   Meter,
   SectionTitle,
@@ -124,9 +124,9 @@ export default function CommandCentre() {
   return (
     <>
       {/* --- page head -------------------------------------------------- */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-cu-h1 font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald">
+          <h1 className="text-[1.875rem] font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald sm:text-cu-h1">
             Command Centre
           </h1>
           <p className="mt-1.5 max-w-[56ch] text-[1.0625rem] text-cu-body-text">
@@ -152,35 +152,38 @@ export default function CommandCentre() {
       {/* --- verdict hero ----------------------------------------------- */}
       <section
         aria-labelledby="verdict-h"
-        className="flex flex-wrap items-center gap-6 rounded-2xl bg-cu-emerald p-6 text-white sm:p-8"
+        className="flex flex-col gap-5 rounded-2xl bg-cu-emerald p-5 text-white shadow-[0_6px_20px_rgba(5,53,49,0.16)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-8"
       >
-        <div className="min-w-0 flex-1 basis-80">
+        <div className="min-w-0 flex-1">
           <p className="text-cu-caption font-bold uppercase tracking-[0.09em] text-cu-teal-edge">
             Launch Control verdict
           </p>
           <h2
             id="verdict-h"
-            className="mt-3 text-cu-h2 font-bold leading-tight tracking-[-0.015em] text-white sm:text-[2.25rem]"
+            className="mt-2.5 text-[1.5rem] font-bold leading-tight tracking-[-0.015em] text-white sm:mt-3 sm:text-[2.25rem]"
           >
             {topFinding ? topFinding.title : "Nothing is blocking rollout"}
           </h2>
-          <p className="mt-2.5 max-w-[64ch] text-[1.0625rem] leading-relaxed text-cu-teal-tint-strong">
+          <p className="mt-2.5 max-w-[64ch] text-cu-body leading-relaxed text-cu-teal-tint-strong sm:text-[1.0625rem]">
             {topFinding
               ? topFinding.detail
               : "Every check passed against the locked calendar and the current roster."}
           </p>
         </div>
-        <div className="flex flex-none flex-col items-start gap-3">
+        <div className="flex flex-none flex-col items-start gap-2.5 sm:items-end sm:text-right">
           <SeverityBadge severity={worst} label={verdictCount} size="lg" />
-          <p className="max-w-[22ch] text-cu-caption text-cu-teal-edge">
+          <p className="max-w-[24ch] text-cu-caption text-cu-teal-edge">
             Its job is not to cheerlead. It asks whether the plan actually works.
           </p>
         </div>
       </section>
 
       {/* --- priority row ------------------------------------------------ */}
-      <section aria-labelledby="pri-h" className="flex flex-wrap items-stretch gap-5">
-        <Card className="min-w-0 flex-1 basis-[330px]">
+      <section
+        aria-labelledby="pri-h"
+        className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-12"
+      >
+        <Card className="min-w-0 lg:col-span-5">
           <h3
             id="pri-h"
             className="text-cu-caption font-bold uppercase tracking-[0.09em] text-cu-body-text"
@@ -188,10 +191,10 @@ export default function CommandCentre() {
             Deployment-ready by CNY 2027
           </h3>
           <p className="mt-3.5 flex flex-wrap items-baseline gap-3">
-            <span className="text-[clamp(3rem,8vw,4.25rem)] font-bold leading-[0.9] tracking-[-0.015em] text-cu-ink tabular-nums">
+            <span className="text-[clamp(2.75rem,8vw,4.25rem)] font-bold leading-[0.9] tracking-[-0.015em] text-cu-ink tabular-nums">
               {h.deployable}
             </span>
-            <span className="text-[1.25rem] text-cu-body-text">
+            <span className="text-[1.125rem] text-cu-body-text sm:text-[1.25rem]">
               of {h.deployable_target} target
             </span>
           </p>
@@ -218,7 +221,7 @@ export default function CommandCentre() {
           )}
         </Card>
 
-        <div className="grid min-w-0 flex-[2] basis-[440px] grid-cols-[repeat(auto-fit,minmax(175px,1fr))] gap-3.5">
+        <div className="grid min-w-0 grid-cols-1 gap-3.5 sm:grid-cols-3 lg:col-span-7">
           <StatTile
             label="CB5 team leaders"
             caption={`Against ${h.leader_duties_per_week} weekly duties at full rollout`}
@@ -299,16 +302,25 @@ export default function CommandCentre() {
         </Card>
       </section>
 
-      <div className="flex flex-wrap gap-2.5">
-        <Button onClick={() => (window.location.href = "/events")}>
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+        <Link
+          to="/events"
+          className="tap-target inline-flex items-center justify-center rounded-xl bg-cu-orange px-5 py-2.5 text-cu-body font-semibold text-cu-emerald-ink transition hover:brightness-110"
+        >
           Open the calendar
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => (window.location.href = "/people")}
+        </Link>
+        <Link
+          to="/signups"
+          className="tap-target inline-flex items-center justify-center rounded-xl border border-cu-border-strong bg-cu-mist px-5 py-2.5 text-cu-body font-semibold text-cu-teal-ink transition hover:border-cu-teal-edge hover:bg-cu-teal-tint"
+        >
+          View all sign-ups
+        </Link>
+        <Link
+          to="/people"
+          className="tap-target inline-flex items-center justify-center rounded-xl border border-cu-border-strong bg-cu-mist px-5 py-2.5 text-cu-body font-semibold text-cu-teal-ink transition hover:border-cu-teal-edge hover:bg-cu-teal-tint"
         >
           See who is closest to CB5
-        </Button>
+        </Link>
       </div>
     </>
   );

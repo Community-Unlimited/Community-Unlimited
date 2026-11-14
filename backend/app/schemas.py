@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -245,6 +245,19 @@ class TierOut(BaseModel):
     next_module: str | None
 
 
+class AvailabilityOut(ORMModel):
+    weekday: int
+    start_time: time
+    end_time: time
+
+
+class ConsentOut(ORMModel):
+    consent_type: str
+    granted: bool
+    granted_at: datetime | None = None
+    method: str | None = None
+
+
 class PersonOut(ORMModel):
     id: int
     preferred_name: str
@@ -271,12 +284,16 @@ class PersonOut(ORMModel):
     status: str
     registration_source: str
     assisted_registration: bool
+    assisted_by: str | None = None
     disciple_status: str | None
+    notes: str | None = None
     created_at: datetime
 
 
 class PersonDetailOut(PersonOut):
     interests: list[str] = Field(default_factory=list)
+    availability: list[AvailabilityOut] = Field(default_factory=list)
+    consents: list[ConsentOut] = Field(default_factory=list)
     tier: TierOut | None = None
 
     @field_validator("interests", mode="before")

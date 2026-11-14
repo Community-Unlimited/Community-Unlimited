@@ -151,7 +151,7 @@ export default function Events() {
   return (
     <>
       <div>
-        <h1 className="text-cu-h1 font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald">
+        <h1 className="text-[1.875rem] font-bold leading-[1.15] tracking-[-0.015em] text-cu-emerald sm:text-cu-h1">
           Events &amp; Academy
         </h1>
         <p className="mt-1.5 max-w-[70ch] text-[1.0625rem] text-cu-body-text">
@@ -326,7 +326,7 @@ export default function Events() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-end gap-2.5">
-                  <div className="min-w-[220px] flex-1">
+                  <div className="min-w-0 flex-1 basis-full sm:basis-[220px]">
                     <Field label="Add someone to this event">
                       <select
                         className={inputClass}
