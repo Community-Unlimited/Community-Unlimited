@@ -420,23 +420,20 @@ export default function Register() {
     return (
       <div className="mx-auto max-w-2xl">
         <section className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.08)]">
-          <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
-          <div className="p-6 sm:p-9">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2 shadow-sm">
-                <img
-                  src="/Community-Unlimited-Logo.png"
-                  alt="Community Unlimited"
-                  className="h-10 w-auto object-contain sm:h-12"
-                />
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-cu-green/30 bg-cu-green-tint px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.06em] text-cu-green">
-                <span aria-hidden="true" className="size-2 rounded-full bg-cu-green" />
-                Registration received
-              </span>
-            </div>
-
-            <div className="mt-6 flex items-start gap-4">
+          <div className="h-1.5 bg-gradient-to-r from-cu-teal-ink via-cu-teal to-cu-orange" />
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-cu-emerald px-5 py-4 sm:px-8 sm:py-5">
+            <img
+              src="/Community-Unlimited-Logo.png"
+              alt="Community Unlimited"
+              className="h-10 w-auto object-contain sm:h-12"
+            />
+            <span className="inline-flex items-center gap-2 rounded-full border border-cu-green/30 bg-cu-green-tint px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.06em] text-cu-green">
+              <span aria-hidden="true" className="size-2 rounded-full bg-cu-green" />
+              Registration received
+            </span>
+          </div>
+          <div className="p-5 sm:p-9">
+            <div className="flex items-start gap-4">
               <div
                 aria-hidden="true"
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cu-green-tint text-cu-green"
@@ -487,27 +484,22 @@ export default function Register() {
     <div className="mx-auto max-w-2xl">
       {/* Hero / Welcome header */}
       <header className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.07)]">
-        <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2 shadow-sm">
-              <img
-                src="/Community-Unlimited-Logo.png"
-                alt="Community Unlimited"
-                className="h-10 w-auto object-contain sm:h-12"
-              />
-            </span>
-          </div>
-
-          <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="h-1.5 bg-gradient-to-r from-cu-teal-ink via-cu-teal to-cu-orange" />
+        <div className="bg-cu-emerald px-5 py-4 sm:px-8 sm:py-5">
+          <img
+            src="/Community-Unlimited-Logo.png"
+            alt="Community Unlimited"
+            className="h-10 w-auto object-contain sm:h-12"
+          />
+        </div>
+        <div className="p-5 sm:p-8">
+          <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-cu-h1 font-bold leading-[1.12] tracking-[-0.015em] text-cu-emerald">
+              <h1 className="text-[1.875rem] font-bold leading-[1.12] tracking-[-0.015em] text-cu-emerald sm:text-cu-h1">
                 Join Community Unlimited
               </h1>
             </div>
-            <div className="self-start sm:self-center">
-              <HighFiveIllustration />
-            </div>
+            <HighFiveIllustration />
           </div>
         </div>
       </header>

@@ -181,7 +181,7 @@ export default function App() {
             path="/register"
             element={
               <div className="min-h-screen bg-cu-sage">
-                <main className="mx-auto max-w-[1760px] px-4 py-10 sm:px-8">
+                <main className="mx-auto max-w-[1760px] px-4 py-5 sm:px-8 sm:py-10">
                   <Register />
                 </main>
               </div>
