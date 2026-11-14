@@ -494,10 +494,6 @@ export default function Register() {
               alt="Community Unlimited"
               className="h-11 w-auto object-contain sm:h-13"
             />
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-cu-teal-edge bg-cu-teal-tint px-3.5 py-1 text-cu-caption font-bold tracking-[0.04em] text-cu-teal-ink">
-              <span aria-hidden="true" className="size-2 rounded-full bg-cu-teal-ink" />
-              Free to join!
-            </span>
           </div>
 
           <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -505,29 +501,10 @@ export default function Register() {
               <h1 className="text-cu-h1 font-bold leading-[1.12] tracking-[-0.015em] text-cu-emerald">
                 Join Community Unlimited
               </h1>
-              <p className="mt-3 text-[1.0625rem] leading-relaxed text-cu-body-text">
-                Age is not the limit. Disconnection is. Register below for our{" "}
-                <strong className="font-semibold text-cu-ink">Kopi Brewing</strong> and{" "}
-                <strong className="font-semibold text-cu-ink">Community Workout</strong>{" "}
-                sessions — tell us how to reach you and how we can keep you safe and
-                comfortable.
-              </p>
             </div>
             <div className="self-start sm:self-center">
               <HighFiveIllustration />
             </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-cu-border bg-cu-panel px-3 py-1.5 text-cu-caption font-semibold text-cu-ink">
-              Takes about 3 mins
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-cu-border bg-cu-panel px-3 py-1.5 text-cu-caption font-semibold text-cu-ink">
-              No account needed
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-xl border border-cu-border bg-cu-panel px-3 py-1.5 text-cu-caption font-semibold text-cu-ink">
-              Safe &amp; PDPA protected
-            </span>
           </div>
         </div>
       </header>
