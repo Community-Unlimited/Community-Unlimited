@@ -12,7 +12,6 @@
  */
 
 import { useRef, useState } from "react";
-import logoCu from "@/assets/logo-cu.png";
 import { post } from "../api/client";
 import type { Person, Tier } from "../api/types";
 import { Banner, Button, Field, SectionTitle } from "../components/ui";
@@ -424,11 +423,13 @@ export default function Register() {
           <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
           <div className="p-6 sm:p-9">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <img
-                src={logoCu}
-                alt="Community Unlimited"
-                className="h-12 w-auto object-contain sm:h-14"
-              />
+              <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2 shadow-sm">
+                <img
+                  src="/Community-Unlimited-Logo.png"
+                  alt="Community Unlimited"
+                  className="h-10 w-auto object-contain sm:h-12"
+                />
+              </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-cu-green/30 bg-cu-green-tint px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.06em] text-cu-green">
                 <span aria-hidden="true" className="size-2 rounded-full bg-cu-green" />
                 Registration received
@@ -489,11 +490,13 @@ export default function Register() {
         <div className="h-2 bg-gradient-to-r from-cu-emerald via-cu-teal-ink to-cu-teal" />
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <img
-              src={logoCu}
-              alt="Community Unlimited"
-              className="h-11 w-auto object-contain sm:h-13"
-            />
+            <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2 shadow-sm">
+              <img
+                src="/Community-Unlimited-Logo.png"
+                alt="Community Unlimited"
+                className="h-10 w-auto object-contain sm:h-12"
+              />
+            </span>
           </div>
 
           <div className="mt-5 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
