@@ -24,26 +24,40 @@ const queryClient = new QueryClient({
 const NAV = [
   { to: "/", label: "Command Centre" },
   { to: "/signups", label: "Sign-ups" },
-  { to: "/people", label: "People & tiers" },
+  { to: "/people", label: "People & Tiers" },
   { to: "/events", label: "Events & Academy" },
   { to: "/whatsapp", label: "WhatsApp" },
 ];
 
 /**
- * The CU lockup, for use on the emerald header and sign-in chip.
+ * The CU-OS lockup, for use on the emerald header and sign-in chip.
  */
-export function Brand({ size = 38 }: { size?: number }) {
+export function Brand({
+  size = 40,
+  subtitle = "Community Unlimited",
+  badge = "OPS",
+}: {
+  size?: number;
+  subtitle?: string;
+  badge?: string;
+}) {
   return (
-    <span className="flex flex-none items-baseline gap-2.5" style={{ height: size }}>
-      <span className="self-center text-[1.0625rem] font-bold leading-none tracking-[-0.01em] text-white">
-        Community<span className="text-cu-teal">Unlimited</span>
+    <span className="flex flex-none items-center gap-3" style={{ minHeight: size }}>
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#10b981] text-sm font-extrabold tracking-tight text-white shadow-xs">
+        CU
       </span>
-      <span
-        aria-hidden="true"
-        className="self-center h-4 w-px bg-cu-teal-edge/40"
-      />
-      <span className="self-center text-cu-caption font-bold uppercase tracking-[0.14em] text-cu-teal">
-        CU-OS
+      <span className="flex flex-col">
+        <span className="flex items-center gap-2">
+          <span className="text-[1.0625rem] font-bold leading-none text-white">
+            CU-OS
+          </span>
+          <span className="rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-cu-teal-edge">
+            {badge}
+          </span>
+        </span>
+        <span className="mt-0.5 text-xs font-medium leading-none text-cu-teal-edge/85">
+          {subtitle}
+        </span>
       </span>
     </span>
   );
@@ -58,6 +72,10 @@ function Shell({
 }) {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const currentNav =
+    NAV.find((item) => item.to === pathname) ?? NAV[0];
 
   const navLink = (item: (typeof NAV)[number], stacked: boolean) => {
     const active = pathname === item.to;
@@ -65,14 +83,17 @@ function Shell({
       <Link
         key={item.to}
         to={item.to}
-        onClick={() => setMenuOpen(false)}
+        onClick={() => {
+          setMenuOpen(false);
+          setUserMenuOpen(false);
+        }}
         aria-current={active ? "page" : undefined}
-        className={`tap-target inline-flex items-center rounded-xl px-4 text-cu-body whitespace-nowrap ${
-          stacked ? "w-full" : ""
+        className={`tap-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm whitespace-nowrap transition ${
+          stacked ? "w-full rounded-xl px-4 py-2.5 text-cu-body" : ""
         } ${
           active
-            ? "bg-cu-teal-edge/20 font-bold text-white shadow-[inset_0_-3px_0_var(--color-cu-teal)]"
-            : "font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+            ? "bg-white font-bold text-cu-emerald shadow-xs"
+            : "font-medium text-cu-teal-edge hover:bg-white/10 hover:text-white"
         }`}
       >
         {item.label}
@@ -89,74 +110,104 @@ function Shell({
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-20 border-b border-cu-teal-edge/15 bg-cu-emerald shadow-[0_2px_10px_rgba(5,53,49,0.16)]">
-        <div className="mx-auto flex min-h-[64px] max-w-[1760px] items-center gap-4 px-4 py-2.5 sm:px-8 lg:px-11">
+      <header className="sticky top-0 z-30 bg-cu-emerald text-white">
+        <div className="mx-auto flex min-h-[64px] max-w-[1760px] items-center gap-3 px-4 py-2.5 sm:px-8 lg:px-11">
           <Link
             to="/"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => {
+              setMenuOpen(false);
+              setUserMenuOpen(false);
+            }}
             aria-label="Command Centre"
             className="shrink-0"
           >
-            <Brand />
+            <Brand subtitle={currentNav.label} />
           </Link>
 
-          <nav aria-label="Main" className="ml-2 hidden gap-1 lg:flex">
+          <nav aria-label="Main" className="ml-4 hidden gap-1.5 lg:flex">
             {NAV.map((item) => navLink(item, false))}
           </nav>
 
-          <div className="ml-auto hidden items-center gap-3 lg:flex">
+          <div className="ml-auto flex items-center gap-2">
             <Link
               to="/register"
-              className="tap-target inline-flex items-center whitespace-nowrap rounded-xl border-[1.5px] border-cu-teal-edge/45 px-4 text-cu-body font-semibold text-cu-teal-edge hover:border-cu-teal-ink hover:bg-cu-teal-tint hover:text-cu-teal-ink"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#1aa39a] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#178f87] sm:text-sm"
             >
-              Registration form
+              + Add Member
             </Link>
-            <span aria-hidden="true" className="h-7 w-px bg-cu-teal-edge/30" />
+
+            {/* Desktop operator badge & menu */}
+            <div className="relative hidden lg:block">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                aria-expanded={userMenuOpen}
+                aria-label="Operator menu"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white transition hover:bg-white/20"
+              >
+                RT
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-cu-border bg-cu-surface p-1.5 text-cu-ink shadow-xl">
+                  <Link
+                    to="/register"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="block rounded-xl px-3.5 py-2 text-sm font-semibold text-cu-ink hover:bg-cu-teal-tint hover:text-cu-teal-ink"
+                  >
+                    Registration form
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onSignOut();
+                    }}
+                    className="w-full rounded-xl px-3.5 py-2 text-left text-sm font-semibold text-cu-red hover:bg-cu-red-tint"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile operator badge + nav toggle */}
             <button
-              onClick={onSignOut}
-              className="tap-target whitespace-nowrap rounded-xl px-3.5 text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white transition hover:bg-white/20 lg:hidden"
             >
-              Sign out
+              {menuOpen ? "✕" : "RT"}
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-            className="tap-target ml-auto inline-flex items-center gap-2 rounded-xl border-[1.5px] border-cu-teal-edge/45 px-3.5 text-cu-body font-semibold text-cu-teal-edge lg:hidden"
-          >
-            <span aria-hidden="true" className="text-[1.25rem] leading-none">
-              {menuOpen ? "✕" : "☰"}
-            </span>
-            Menu
-          </button>
         </div>
 
         {/* Mobile slide-down navigation sheet */}
         {menuOpen && (
           <div
             id="mobile-menu"
-            className="border-t border-cu-teal-edge/25 bg-cu-emerald px-4 pb-5 pt-3 sm:px-8 lg:hidden"
+            className="border-t border-white/10 bg-[#032623] px-4 pb-5 pt-3 sm:px-8 lg:hidden"
           >
             <nav aria-label="Mobile" className="flex flex-col gap-1.5">
               {NAV.map((item) => navLink(item, true))}
             </nav>
-            <div className="mt-4 flex flex-col gap-2.5 border-t border-cu-teal-edge/25 pt-4">
+            <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
               <Link
                 to="/register"
                 onClick={() => setMenuOpen(false)}
-                className="tap-target flex items-center justify-center rounded-xl border-[1.5px] border-cu-teal-edge/45 py-2.5 text-cu-body font-semibold text-cu-teal-edge hover:bg-cu-teal-tint hover:text-cu-teal-ink"
+                className="tap-target flex items-center justify-center rounded-xl border border-white/20 bg-white/5 py-2.5 text-sm font-semibold text-cu-teal-edge hover:bg-white/10 hover:text-white"
               >
-                Registration form
+                Public registration form
               </Link>
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   onSignOut();
                 }}
-                className="tap-target flex items-center justify-center rounded-xl py-2.5 text-cu-body font-medium text-cu-teal-edge hover:bg-cu-teal-edge/15 hover:text-white"
+                className="tap-target flex items-center justify-center rounded-xl py-2.5 text-sm font-semibold text-red-300 hover:bg-red-500/15"
               >
                 Sign out
               </button>
@@ -165,10 +216,7 @@ function Shell({
         )}
       </header>
 
-      <main
-        id="main"
-        className="mx-auto flex w-full max-w-[1760px] flex-col gap-6 px-4 pb-16 pt-5 sm:gap-7 sm:px-8 sm:pt-8 lg:px-11"
-      >
+      <main id="main" className="flex w-full flex-col pb-16">
         {children}
       </main>
     </div>

@@ -1,20 +1,32 @@
 /**
  * View 3 — People pipeline and tier tracking.
  *
- * Mobile-first volunteer roster with an emerald command header, searchable
- * filter pills, collapsible CB1–CB7 pipeline telemetry, 7-segment
- * qualification progression tracks, and human-in-the-loop sign-off review.
+ * Mobile-first volunteer roster with an emerald command filter band,
+ * collapsible CB1–CB7 pipeline telemetry, 7-segment qualification progression
+ * tracks, and human-in-the-loop sign-off review.
  */
 
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post } from "../api/client";
 import type { PendingQualification, Person, PipelineSummary } from "../api/types";
 import {
+  CheckCircleIcon,
+  PhoneIcon,
+  StampIcon,
+  WhatsAppIcon,
+} from "../components/icons";
+import {
   Banner,
   Button,
+  EmeraldBand,
+  EmeraldSearch,
+  FilterPill,
+  PageContent,
+  RosterHeader,
   Spinner,
+  TelemetryBar,
+  TelemetryStat,
 } from "../components/ui";
 
 const CORE = ["CB1", "CB2", "CB3", "CB4"] as const;
@@ -76,153 +88,6 @@ function getVerifiedCount(person: Person): number {
     ...person.tier.leadership_held,
   ]);
   return unique.size;
-}
-
-function StatCell({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "amber";
-}) {
-  return (
-    <div className="rounded-xl border border-cu-border bg-cu-panel p-3.5">
-      <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-cu-body-text">
-        {label}
-      </p>
-      <p
-        className={`mt-1.5 text-[1.75rem] font-bold leading-none tracking-[-0.015em] tabular-nums ${
-          tone === "amber" ? "text-cu-amber" : "text-cu-ink"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-/* --- Inline SVG icons -------------------------------------------------- */
-
-function SearchIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4 shrink-0 text-cu-teal-edge/70"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  );
-}
-
-function CheckCircleIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-}
-
-function TelemetryIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-4 shrink-0 text-cu-teal-ink"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-    >
-      <rect x="3" y="12" width="4" height="8" rx="1" />
-      <rect x="10" y="6" width="4" height="14" rx="1" />
-      <rect x="17" y="9" width="4" height="11" rx="1" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function StampIcon({ className = "size-4" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 20h14" />
-      <path d="M6 17h12v-2a2 2 0 0 0-2-2h-2V9a3 3 0 1 0-4 0v4H8a2 2 0 0 0-2 2v2Z" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-3.5 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
-    </svg>
-  );
-}
-
-function PhoneIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="size-3.5 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92Z" />
-    </svg>
-  );
 }
 
 function QualificationTrack({ person }: { person: Person }) {
@@ -403,7 +268,6 @@ export default function People() {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
       }
-      // "needs_action": pending sign-off first, then deployable/in-training, then name
       const aPending =
         pendingByPerson.has(a.id) || (a.tier?.pending_approval?.length ?? 0) > 0
           ? 1
@@ -424,210 +288,85 @@ export default function People() {
   const summary = pipeline.data;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* --- Emerald Command Header & Filter Bar ------------------------- */}
-      <section className="-mx-4 -mt-5 bg-cu-emerald px-4 pb-4 pt-4 text-white shadow-[0_4px_16px_rgba(5,53,49,0.18)] sm:mx-0 sm:mt-0 sm:rounded-2xl sm:px-6 sm:py-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#10b981] text-sm font-extrabold tracking-tight text-white shadow-xs">
-              CU
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[1.0625rem] font-bold leading-none text-white">
-                  CU-OS
-                </span>
-                <span className="rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-cu-teal-edge">
-                  OPS
-                </span>
-              </div>
-              <p className="mt-0.5 text-xs font-medium text-cu-teal-edge/85">
-                People &amp; Tiers
-              </p>
-            </div>
-          </div>
+    <>
+      <EmeraldBand>
+        <EmeraldSearch
+          value={search}
+          onChange={setSearch}
+          label="Search volunteers"
+          placeholder="Search volunteers by name, phone, or tier..."
+        />
 
-          <div className="flex items-center gap-2.5">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-1 rounded-full bg-[#1aa39a] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#178f87] sm:text-sm"
-            >
-              + Add Member
-            </Link>
-            <span
-              aria-label="Operator initials"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-bold text-white"
-            >
-              RT
-            </span>
-          </div>
-        </div>
-
-        {/* Search input */}
-        <div className="mt-4">
-          <label className="relative flex items-center">
-            <span className="sr-only">Search volunteers</span>
-            <span className="pointer-events-none absolute left-3.5 flex items-center">
-              <SearchIcon />
-            </span>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search volunteers by name, phone, or tier..."
-              className="w-full rounded-xl border border-white/15 bg-[#032623] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-cu-teal-edge/65 focus:border-cu-teal focus:outline-none"
-            />
-          </label>
-        </div>
-
-        {/* Filter pills */}
         <div
           role="tablist"
           aria-label="Filter volunteers"
           className="mt-3 flex gap-2 overflow-x-auto pb-1"
         >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "all"}
+          <FilterPill
+            active={activeTab === "all"}
             onClick={() => setActiveTab("all")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-              activeTab === "all"
-                ? "border-white bg-white text-cu-emerald"
-                : "border-white/20 bg-[#07423d] text-white hover:border-white/40"
-            }`}
-          >
-            All
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                activeTab === "all"
-                  ? "bg-cu-teal-tint text-cu-teal-ink"
-                  : "bg-white/15 text-white"
-              }`}
-            >
-              {counts.all}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "needs_approval"}
+            label="All"
+            count={counts.all}
+          />
+          <FilterPill
+            active={activeTab === "needs_approval"}
             onClick={() => setActiveTab("needs_approval")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-              activeTab === "needs_approval"
-                ? "border-amber-400 bg-amber-400 text-cu-emerald-ink"
-                : "border-amber-400/45 bg-[#07423d] text-white hover:border-amber-400/80"
-            }`}
-          >
-            <span
-              aria-hidden="true"
-              className={`size-2 rounded-full ${
-                activeTab === "needs_approval" ? "bg-cu-emerald" : "bg-amber-400"
-              }`}
-            />
-            Needs Approval
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                activeTab === "needs_approval"
-                  ? "bg-cu-emerald text-amber-300"
-                  : "bg-amber-400 text-cu-emerald-ink"
-              }`}
-            >
-              {counts.needsApproval}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "deployable"}
+            label="Needs Approval"
+            count={counts.needsApproval}
+            tone="amber"
+            icon={
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-full ${
+                  activeTab === "needs_approval" ? "bg-cu-emerald" : "bg-amber-400"
+                }`}
+              />
+            }
+          />
+          <FilterPill
+            active={activeTab === "deployable"}
             onClick={() => setActiveTab("deployable")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-              activeTab === "deployable"
-                ? "border-emerald-400 bg-emerald-500 text-white"
-                : "border-emerald-400/40 bg-[#07423d] text-white hover:border-emerald-400/80"
-            }`}
-          >
-            <CheckCircleIcon className="size-3.5 text-emerald-300" />
-            Deployable
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                activeTab === "deployable"
-                  ? "bg-white text-emerald-800"
-                  : "bg-emerald-600 text-white"
-              }`}
-            >
-              {counts.deployable}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "in_training"}
+            label="Deployable"
+            count={counts.deployable}
+            tone="green"
+            icon={
+              <CheckCircleIcon
+                className={`size-3.5 ${
+                  activeTab === "deployable" ? "text-white" : "text-emerald-300"
+                }`}
+              />
+            }
+          />
+          <FilterPill
+            active={activeTab === "in_training"}
             onClick={() => setActiveTab("in_training")}
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${
-              activeTab === "in_training"
-                ? "border-white bg-white text-cu-emerald"
-                : "border-white/20 bg-[#07423d] text-white hover:border-white/40"
-            }`}
-          >
-            In Training
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
-                activeTab === "in_training"
-                  ? "bg-cu-teal-tint text-cu-teal-ink"
-                  : "bg-white/15 text-white"
-              }`}
-            >
-              {counts.inTraining}
-            </span>
-          </button>
+            label="In Training"
+            count={counts.inTraining}
+          />
         </div>
-      </section>
+      </EmeraldBand>
 
-      {error && <Banner tone="red">{error}</Banner>}
-      {notice && (
-        <Banner tone="green" onDismiss={() => setNotice(null)}>
-          {notice}
-        </Banner>
-      )}
-
-      {/* --- Collapsible CB1–CB7 Pipeline & Audit Telemetry -------------- */}
-      {summary && (
-        <section className="-mx-4 border-y border-cu-border bg-cu-surface px-4 py-2.5 sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
-          <button
-            type="button"
-            onClick={() => setTelemetryOpen((v) => !v)}
-            aria-expanded={telemetryOpen}
-            className="flex w-full items-center justify-between gap-3 py-1 text-left"
+      <PageContent>
+        {summary && (
+          <TelemetryBar
+            title="CB1–CB7 Pipeline & Audit Telemetry"
+            open={telemetryOpen}
+            onToggle={() => setTelemetryOpen((v) => !v)}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <TelemetryIcon />
-              <span className="truncate text-sm font-bold text-cu-ink">
-                CB1–CB7 Pipeline &amp; Audit Telemetry
-              </span>
-              <span className="shrink-0 rounded-md bg-cu-teal-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-cu-teal-ink">
-                CU-OS
-              </span>
-            </div>
-            <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-cu-body-text">
-              {telemetryOpen ? "Collapse" : "Expand"}
-              <ChevronIcon open={telemetryOpen} />
-            </span>
-          </button>
-
-          {telemetryOpen && (
-            <div className="mt-3 space-y-4 border-t border-cu-line-soft pt-3.5 pb-1">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <StatCell label="Registered" value={summary.registered} />
-                <StatCell label="Deployment-ready" value={summary.deployable} />
-                <StatCell
+                <TelemetryStat label="Registered" value={summary.registered} />
+                <TelemetryStat
+                  label="Deployment-ready"
+                  value={summary.deployable}
+                  tone="green"
+                />
+                <TelemetryStat
                   label="Closest to deployable"
                   value={summary.missing_exactly_one_module.length}
+                  tone="teal"
                 />
-                <StatCell
+                <TelemetryStat
                   label="Awaiting approval"
                   value={pending.data?.length ?? 0}
                   tone="amber"
@@ -686,224 +425,217 @@ export default function People() {
                 </div>
               </div>
             </div>
-          )}
-        </section>
-      )}
+          </TelemetryBar>
+        )}
 
-      {/* --- Active Volunteers Header & Sort Bar ------------------------- */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-xl font-bold tracking-[-0.015em] text-cu-ink sm:text-2xl">
-            Active Volunteers
-          </h1>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold tabular-nums text-emerald-800">
-            {filteredPeople.length} shown
-          </span>
-        </div>
+        {error && <Banner tone="red">{error}</Banner>}
+        {notice && (
+          <Banner tone="green" onDismiss={() => setNotice(null)}>
+            {notice}
+          </Banner>
+        )}
 
-        <label className="flex items-center gap-2 text-xs text-cu-body-text sm:text-sm">
-          <span>Sort:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-xl border border-cu-border-strong bg-cu-surface px-3 py-1.5 text-xs font-semibold text-cu-ink focus:border-cu-teal-ink focus:outline-none sm:text-sm"
-          >
-            <option value="needs_action">Needs Action First</option>
-            <option value="name_asc">Name (A–Z)</option>
-            <option value="most_qualified">Most Qualified</option>
-            <option value="newest">Newest First</option>
-          </select>
-        </label>
-      </div>
+        <RosterHeader
+          title="Active Volunteers"
+          countLabel={`${filteredPeople.length} shown`}
+          right={
+            <label className="flex items-center gap-2 text-xs text-cu-body-text sm:text-sm">
+              <span>Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="rounded-xl border border-cu-border-strong bg-cu-surface px-3 py-1.5 text-xs font-semibold text-cu-ink focus:border-cu-teal-ink focus:outline-none sm:text-sm"
+              >
+                <option value="needs_action">Needs Action First</option>
+                <option value="name_asc">Name (A–Z)</option>
+                <option value="most_qualified">Most Qualified</option>
+                <option value="newest">Newest First</option>
+              </select>
+            </label>
+          }
+        />
 
-      {/* --- Volunteer Cards --------------------------------------------- */}
-      <section aria-label="Volunteer roster" className="flex flex-col gap-3.5">
-        {filteredPeople.map((person) => {
-          const pendingRow = pendingByPerson.get(person.id);
-          const nextPending =
-            pendingRow?.module_code ?? person.tier?.pending_approval?.[0];
-          const pendingModuleName =
-            pendingRow?.module_name ||
-            (nextPending ? MODULE_TITLES[nextPending] : "");
-          const isDeployable = Boolean(person.tier?.deployable);
+        <section aria-label="Volunteer roster" className="flex flex-col gap-3.5">
+          {filteredPeople.map((person) => {
+            const pendingRow = pendingByPerson.get(person.id);
+            const nextPending =
+              pendingRow?.module_code ?? person.tier?.pending_approval?.[0];
+            const pendingModuleName =
+              pendingRow?.module_name ||
+              (nextPending ? MODULE_TITLES[nextPending] : "");
+            const isDeployable = Boolean(person.tier?.deployable);
 
-          const avatarTone = nextPending
-            ? "bg-[#d97706]"
-            : isDeployable
-              ? "bg-[#0e6e68]"
-              : "bg-[#475569]";
-          const dotTone = nextPending
-            ? "bg-amber-400"
-            : isDeployable
-              ? "bg-emerald-500"
-              : "bg-slate-400";
-          const cardBorder = nextPending
-            ? "border-amber-300/90"
-            : isDeployable
-              ? "border-emerald-200"
-              : "border-cu-border";
+            const avatarTone = nextPending
+              ? "bg-[#d97706]"
+              : isDeployable
+                ? "bg-[#0e6e68]"
+                : "bg-[#475569]";
+            const dotTone = nextPending
+              ? "bg-amber-400"
+              : isDeployable
+                ? "bg-emerald-500"
+                : "bg-slate-400";
+            const cardBorder = nextPending
+              ? "border-amber-300/90"
+              : isDeployable
+                ? "border-emerald-200"
+                : "border-cu-border";
 
-          const locationText = person.home_precinct || person.home_zone;
-          const roleText =
-            person.grassroots_organisation ||
-            person.tier?.tier_label ||
-            "Volunteer";
-          const isNextLeadership =
-            nextPending &&
-            (LEADERSHIP as readonly string[]).includes(nextPending);
+            const locationText = person.home_precinct || person.home_zone;
+            const roleText =
+              person.grassroots_organisation ||
+              person.tier?.tier_label ||
+              "Volunteer";
+            const isNextLeadership =
+              nextPending &&
+              (LEADERSHIP as readonly string[]).includes(nextPending);
 
-          const mobilityBadge = person.requires_pmd
-            ? "PMD Required"
-            : person.mobility_aid && person.mobility_aid !== "none"
-              ? MOBILITY_LABELS[person.mobility_aid] ?? person.mobility_aid
-              : null;
+            const mobilityBadge = person.requires_pmd
+              ? "PMD Required"
+              : person.mobility_aid && person.mobility_aid !== "none"
+                ? MOBILITY_LABELS[person.mobility_aid] ?? person.mobility_aid
+                : null;
 
-          const whatsappDigits = person.phone_e164.replace(/\D/g, "");
+            const whatsappDigits = person.phone_e164.replace(/\D/g, "");
 
-          return (
-            <article
-              key={person.id}
-              className={`rounded-2xl border bg-cu-surface p-4 shadow-[0_1px_3px_rgba(31,42,46,0.06)] sm:p-5 ${cardBorder}`}
-            >
-              {/* Top row */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div
-                    className={`relative flex size-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white shadow-xs ${avatarTone}`}
-                  >
-                    {getInitials(person.preferred_name)}
-                    <span
-                      aria-hidden="true"
-                      className={`absolute -right-0.5 -top-0.5 size-3 rounded-full ring-2 ring-white ${dotTone}`}
-                    />
-                  </div>
+            return (
+              <article
+                key={person.id}
+                className={`rounded-2xl border bg-cu-surface p-4 shadow-[0_1px_3px_rgba(31,42,46,0.06)] sm:p-5 ${cardBorder}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div
+                      className={`relative flex size-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white shadow-xs ${avatarTone}`}
+                    >
+                      {getInitials(person.preferred_name)}
+                      <span
+                        aria-hidden="true"
+                        className={`absolute -right-0.5 -top-0.5 size-3 rounded-full ring-2 ring-white ${dotTone}`}
+                      />
+                    </div>
 
-                  <div className="min-w-0">
-                    <h2 className="truncate text-[1.0625rem] font-bold leading-snug text-cu-ink">
-                      {person.preferred_name}
-                    </h2>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs sm:text-sm">
-                      {locationText && (
-                        <span className="font-medium text-cu-teal-ink">
-                          {locationText}
-                        </span>
-                      )}
-                      {locationText && roleText && (
-                        <span aria-hidden="true" className="text-cu-muted">
-                          •
-                        </span>
-                      )}
-                      <span className="text-cu-body-text">{roleText}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  {nextPending ? (
-                    <span className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800">
-                      {nextPending} • {isNextLeadership ? "leadership" : "required"}
-                    </span>
-                  ) : isDeployable ? (
-                    <span className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-                      Deployable
-                    </span>
-                  ) : (
-                    <span className="rounded-lg border border-cu-border bg-cu-line-soft px-2.5 py-0.5 text-xs font-bold text-cu-body-text">
-                      {person.tier?.tier_label ?? "Registered"}
-                    </span>
-                  )}
-                  <span className="text-[11px] font-medium tabular-nums text-cu-muted">
-                    {formatCuId(person.id)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Compact safety/context badges when present */}
-              {(mobilityBadge || person.has_health_conditions) && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {mobilityBadge && (
-                    <span className="rounded-md border border-cu-amber/30 bg-cu-amber-tint px-2 py-0.5 text-[11px] font-bold text-cu-amber">
-                      {mobilityBadge}
-                    </span>
-                  )}
-                  {person.has_health_conditions && (
-                    <span className="rounded-md border border-cu-red/30 bg-cu-red-tint px-2 py-0.5 text-[11px] font-bold text-cu-red">
-                      Health Alert
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* 7-segment qualification progression track */}
-              <QualificationTrack person={person} />
-
-              {/* Awaiting sign-off callout */}
-              {nextPending && (
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-[#fffbeb] px-3.5 py-2.5">
-                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    <StampIcon className="size-4 shrink-0 text-amber-700" />
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-cu-ink">
-                        Awaiting Sign-off:
-                      </p>
-                      <p className="truncate text-xs text-cu-body-text">
-                        {nextPending}{" "}
-                        {pendingModuleName || "Verification"}
+                      <h2 className="truncate text-[1.0625rem] font-bold leading-snug text-cu-ink">
+                        {person.preferred_name}
+                      </h2>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs sm:text-sm">
+                        {locationText && (
+                          <span className="font-medium text-cu-teal-ink">
+                            {locationText}
+                          </span>
+                        )}
+                        {locationText && roleText && (
+                          <span aria-hidden="true" className="text-cu-muted">
+                            •
+                          </span>
+                        )}
+                        <span className="text-cu-body-text">{roleText}</span>
                       </p>
                     </div>
                   </div>
+
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    {nextPending ? (
+                      <span className="rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                        {nextPending} • {isNextLeadership ? "leadership" : "required"}
+                      </span>
+                    ) : isDeployable ? (
+                      <span className="rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                        Deployable
+                      </span>
+                    ) : (
+                      <span className="rounded-lg border border-cu-border bg-cu-line-soft px-2.5 py-0.5 text-xs font-bold text-cu-body-text">
+                        {person.tier?.tier_label ?? "Registered"}
+                      </span>
+                    )}
+                    <span className="text-[11px] font-medium tabular-nums text-cu-muted">
+                      {formatCuId(person.id)}
+                    </span>
+                  </div>
+                </div>
+
+                {(mobilityBadge || person.has_health_conditions) && (
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {mobilityBadge && (
+                      <span className="rounded-md border border-cu-amber/30 bg-cu-amber-tint px-2 py-0.5 text-[11px] font-bold text-cu-amber">
+                        {mobilityBadge}
+                      </span>
+                    )}
+                    {person.has_health_conditions && (
+                      <span className="rounded-md border border-cu-red/30 bg-cu-red-tint px-2 py-0.5 text-[11px] font-bold text-cu-red">
+                        Health Alert
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <QualificationTrack person={person} />
+
+                {nextPending && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-[#fffbeb] px-3.5 py-2.5">
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <StampIcon className="size-4 text-amber-700" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-cu-ink">
+                          Awaiting Sign-off:
+                        </p>
+                        <p className="truncate text-xs text-cu-body-text">
+                          {nextPending} {pendingModuleName || "Verification"}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPerson(person)}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#d97706] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#b45309] sm:text-sm"
+                    >
+                      <StampIcon className="size-3.5" />
+                      Review
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-cu-line-soft pt-3">
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`https://wa.me/${whatsappDigits}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                      <WhatsAppIcon />
+                      WhatsApp
+                    </a>
+                    <a
+                      href={`tel:${person.phone_e164}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
+                    >
+                      <PhoneIcon />
+                      Call
+                    </a>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => setSelectedPerson(person)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#d97706] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#b45309] sm:text-sm"
+                    className="text-xs font-bold text-cu-teal-ink transition hover:underline sm:text-sm"
                   >
-                    <StampIcon className="size-3.5" />
-                    Review
+                    Full Record →
                   </button>
                 </div>
-              )}
+              </article>
+            );
+          })}
 
-              {/* Bottom action row */}
-              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 border-t border-cu-line-soft pt-3">
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`https://wa.me/${whatsappDigits}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                  >
-                    <WhatsAppIcon />
-                    WhatsApp
-                  </a>
-                  <a
-                    href={`tel:${person.phone_e164}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
-                  >
-                    <PhoneIcon />
-                    Call
-                  </a>
-                </div>
+          {filteredPeople.length === 0 && (
+            <p className="rounded-2xl border border-cu-border bg-cu-surface p-8 text-center text-base text-cu-body-text">
+              No volunteers match your current filter.
+            </p>
+          )}
+        </section>
+      </PageContent>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedPerson(person)}
-                  className="text-xs font-bold text-cu-teal-ink transition hover:underline sm:text-sm"
-                >
-                  Full Record →
-                </button>
-              </div>
-            </article>
-          );
-        })}
-
-        {filteredPeople.length === 0 && (
-          <p className="rounded-2xl border border-cu-border bg-cu-surface p-8 text-center text-base text-cu-body-text">
-            No volunteers match your current filter.
-          </p>
-        )}
-      </section>
-
-      {/* --- Review / Full Record Modal ---------------------------------- */}
       {selectedPerson && (
         <div
           role="dialog"
@@ -1086,6 +818,6 @@ export default function People() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

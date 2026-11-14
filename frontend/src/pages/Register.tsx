@@ -14,10 +14,11 @@
 import { useRef, useState } from "react";
 import { post } from "../api/client";
 import type { Person, Tier } from "../api/types";
+import { Brand } from "../App";
 import { Banner, Button, Field, SectionTitle } from "../components/ui";
 
 const registerCardClass =
-  "rounded-3xl border border-cu-border bg-cu-surface p-6 shadow-[0_8px_28px_rgba(5,53,49,0.06)] sm:p-8";
+  "rounded-2xl border border-cu-border bg-cu-surface p-5 shadow-[0_1px_3px_rgba(31,42,46,0.06)] sm:p-7";
 
 const registerInputClass =
   "tap-target w-full rounded-xl border-[1.5px] border-cu-border-strong bg-cu-surface px-4 py-3 text-cu-body text-cu-ink shadow-[0_1px_2px_rgba(5,53,49,0.04)] transition-all duration-150 placeholder:text-cu-muted hover:border-cu-teal-mid focus:border-cu-teal-ink focus:bg-cu-surface focus:outline-2 focus:outline-transparent focus:ring-4 focus:ring-cu-teal/25";
@@ -419,16 +420,11 @@ export default function Register() {
   if (done) {
     return (
       <div className="mx-auto max-w-2xl">
-        <section className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.08)]">
-          <div className="h-1.5 bg-gradient-to-r from-cu-teal-ink via-cu-teal to-cu-orange" />
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-cu-emerald px-5 py-4 sm:px-8 sm:py-5">
-            <img
-              src="/Community-Unlimited-Logo.png"
-              alt="Community Unlimited"
-              className="h-10 w-auto object-contain sm:h-12"
-            />
-            <span className="inline-flex items-center gap-2 rounded-full border border-cu-green/30 bg-cu-green-tint px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.06em] text-cu-green">
-              <span aria-hidden="true" className="size-2 rounded-full bg-cu-green" />
+        <section className="overflow-hidden rounded-2xl border border-cu-border bg-cu-surface shadow-[0_1px_3px_rgba(31,42,46,0.06)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-cu-emerald px-5 py-4 text-white sm:px-7">
+            <Brand size={40} badge="JOIN" subtitle="Volunteer & Resident Intake" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3.5 py-1 text-cu-caption font-bold uppercase tracking-[0.06em] text-emerald-200">
+              <span aria-hidden="true" className="size-2 rounded-full bg-emerald-400" />
               Registration received
             </span>
           </div>
@@ -483,21 +479,22 @@ export default function Register() {
   return (
     <div className="mx-auto max-w-2xl">
       {/* Hero / Welcome header */}
-      <header className="overflow-hidden rounded-3xl border border-cu-border bg-cu-surface shadow-[0_10px_30px_rgba(5,53,49,0.07)]">
-        <div className="h-1.5 bg-gradient-to-r from-cu-teal-ink via-cu-teal to-cu-orange" />
-        <div className="bg-cu-emerald px-5 py-4 sm:px-8 sm:py-5">
-          <img
-            src="/Community-Unlimited-Logo.png"
-            alt="Community Unlimited"
-            className="h-10 w-auto object-contain sm:h-12"
-          />
+      <header className="overflow-hidden rounded-2xl border border-cu-border bg-cu-surface shadow-[0_1px_3px_rgba(31,42,46,0.06)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-cu-emerald px-5 py-4 text-white sm:px-7">
+          <Brand size={40} badge="JOIN" subtitle="Volunteer & Resident Intake" />
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-cu-teal-edge">
+            3 quick steps
+          </span>
         </div>
-        <div className="p-5 sm:p-8">
+        <div className="p-5 sm:p-7">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-[1.875rem] font-bold leading-[1.12] tracking-[-0.015em] text-cu-emerald sm:text-cu-h1">
+              <h1 className="text-[1.75rem] font-bold leading-[1.15] tracking-[-0.015em] text-cu-ink sm:text-[2.125rem]">
                 Join Community Unlimited
               </h1>
+              <p className="mt-1 text-sm text-cu-body-text">
+                Age-friendly registration · Takes about 2 minutes
+              </p>
             </div>
             <HighFiveIllustration />
           </div>
@@ -507,56 +504,58 @@ export default function Register() {
       {/* Step progress bar */}
       <div
         ref={formTopRef}
-        className="mt-6 scroll-mt-4 rounded-2xl border border-cu-border bg-cu-surface p-4 shadow-[0_4px_14px_rgba(5,53,49,0.05)] sm:p-5"
+        className="mt-4 scroll-mt-4 rounded-2xl border border-cu-border bg-cu-surface p-4 shadow-[0_1px_3px_rgba(31,42,46,0.06)] sm:p-5"
       >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-cu-body font-bold text-cu-teal-ink">
-            Step {step} of {STEPS.length}: {currentStep.title}
-          </p>
-          <span className="text-cu-caption font-semibold text-cu-body-text">
-            {Math.round((step / STEPS.length) * 100)}% complete
-          </span>
-        </div>
+        <div className="rounded-xl border border-cu-line-soft bg-[#f8fafb] px-3.5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <p className="font-bold text-cu-teal-ink sm:text-sm">
+              Step {step} of {STEPS.length}: {currentStep.title}
+            </p>
+            <span className="font-bold tabular-nums text-cu-ink">
+              {Math.round((step / STEPS.length) * 100)}% complete
+            </span>
+          </div>
 
-        <div
-          role="progressbar"
-          aria-valuenow={step}
-          aria-valuemin={1}
-          aria-valuemax={STEPS.length}
-          aria-label={`Registration progress: Step ${step} of ${STEPS.length}`}
-          className="mt-3 grid grid-cols-3 gap-2"
-        >
-          {STEPS.map((s) => {
-            const active = s.id === step;
-            const completed = s.id < step;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => jumpToStep(s.id)}
-                className="group text-left focus:outline-none"
-              >
-                <span
-                  className={`block h-2.5 w-full rounded-full transition-colors ${
-                    completed || active
-                      ? "bg-cu-teal-ink"
-                      : "bg-cu-sage group-hover:bg-cu-teal-edge"
-                  }`}
-                />
-                <span
-                  className={`mt-1.5 block text-cu-caption transition-colors ${
-                    active
-                      ? "font-bold text-cu-emerald"
-                      : completed
-                        ? "font-semibold text-cu-teal-ink"
-                        : "font-medium text-cu-body-text"
-                  }`}
+          <div
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={STEPS.length}
+            aria-label={`Registration progress: Step ${step} of ${STEPS.length}`}
+            className="mt-2.5 grid grid-cols-3 gap-2"
+          >
+            {STEPS.map((s) => {
+              const active = s.id === step;
+              const completed = s.id < step;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => jumpToStep(s.id)}
+                  className="group text-left focus:outline-none"
                 >
-                  {s.id}. {s.short}
-                </span>
-              </button>
-            );
-          })}
+                  <span
+                    className={`block h-2 w-full rounded-full transition-colors ${
+                      completed || active
+                        ? "bg-[#0f8a5f]"
+                        : "bg-slate-200 group-hover:bg-cu-teal-edge"
+                    }`}
+                  />
+                  <span
+                    className={`mt-1.5 block text-xs transition-colors ${
+                      active
+                        ? "font-bold text-cu-ink"
+                        : completed
+                          ? "font-semibold text-[#0f8a5f]"
+                          : "font-medium text-cu-muted"
+                    }`}
+                  >
+                    {s.id}. {s.short}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

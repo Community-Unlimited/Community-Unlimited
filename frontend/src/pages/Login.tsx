@@ -54,15 +54,13 @@ export default function Login({ onSignedIn }: { onSignedIn: () => void }) {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-cu-emerald p-4 sm:p-6">
-      <div className="w-full max-w-[440px] overflow-hidden rounded-3xl border border-cu-teal-edge/20 bg-cu-surface shadow-[0_20px_56px_rgba(5,53,49,0.42)]">
-        <div className="h-2 bg-gradient-to-r from-cu-teal-ink via-cu-teal to-cu-orange" />
-        <div className="p-6 sm:p-9">
-          <span className="inline-flex items-center rounded-xl bg-cu-emerald px-3.5 py-2.5 shadow-sm">
-            <Brand size={34} />
-          </span>
-
-          <h1 className="mt-5 text-[2rem] font-bold leading-tight tracking-[-0.015em] text-cu-emerald">
+    <div className="grid min-h-screen place-items-center bg-cu-sage p-4 sm:p-6">
+      <div className="w-full max-w-[440px] overflow-hidden rounded-2xl border border-cu-border bg-cu-surface shadow-[0_20px_56px_rgba(5,53,49,0.14)]">
+        <div className="flex items-center justify-between bg-cu-emerald px-6 py-4 text-white">
+          <Brand size={40} subtitle="Operations Access" />
+        </div>
+        <div className="p-6 sm:p-8">
+          <h1 className="text-[1.75rem] font-bold leading-tight tracking-[-0.015em] text-cu-ink">
             Sign in
           </h1>
           <p className="mt-2 text-cu-body leading-relaxed text-cu-body-text">

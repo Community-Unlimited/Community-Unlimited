@@ -8,6 +8,7 @@
 
 import type { ReactNode } from "react";
 import type { Severity } from "../api/types";
+import { ChevronIcon, SearchIcon, TelemetryIcon } from "./icons";
 
 /* -------------------------------------------------------------------------
  * status
@@ -356,6 +357,243 @@ export function TierPills({
           </span>
         );
       })}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------
+ * CU-OS command layout primitives
+ * ---------------------------------------------------------------------- */
+
+/** Full-width emerald command band sitting flush below the sticky header. */
+export function EmeraldBand({ children }: { children: ReactNode }) {
+  return (
+    <section className="w-full bg-cu-emerald text-white shadow-[0_4px_16px_rgba(5,53,49,0.16)]">
+      <div className="mx-auto max-w-[1760px] px-4 pb-4 pt-2 sm:px-8 sm:pb-5 sm:pt-3 lg:px-11">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/** Main centered page content column below the EmeraldBand. */
+export function PageContent({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`mx-auto flex w-full max-w-[1760px] flex-col gap-4 px-4 pt-4 sm:gap-5 sm:px-8 sm:pt-6 lg:px-11 ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Dark emerald search bar used inside EmeraldBand. */
+export function EmeraldSearch({
+  value,
+  onChange,
+  placeholder,
+  label,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder: string;
+  label: string;
+}) {
+  return (
+    <label className="relative flex items-center">
+      <span className="sr-only">{label}</span>
+      <span className="pointer-events-none absolute left-3.5 flex items-center">
+        <SearchIcon />
+      </span>
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-white/15 bg-[#032623] py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-cu-teal-edge/65 focus:border-cu-teal focus:outline-none"
+      />
+    </label>
+  );
+}
+
+type FilterPillTone = "neutral" | "amber" | "green" | "red";
+
+/** Scrollable filter pill used inside EmeraldBand. */
+export function FilterPill({
+  active,
+  onClick,
+  label,
+  count,
+  tone = "neutral",
+  icon,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count?: number;
+  tone?: FilterPillTone;
+  icon?: ReactNode;
+}) {
+  const pillStyle = active
+    ? {
+        neutral: "border-white bg-white text-cu-emerald",
+        amber: "border-amber-400 bg-amber-400 text-cu-emerald-ink",
+        green: "border-emerald-400 bg-emerald-500 text-white",
+        red: "border-red-400 bg-red-500 text-white",
+      }[tone]
+    : {
+        neutral: "border-white/20 bg-[#07423d] text-white hover:border-white/40",
+        amber:
+          "border-amber-400/45 bg-[#07423d] text-white hover:border-amber-400/80",
+        green:
+          "border-emerald-400/40 bg-[#07423d] text-white hover:border-emerald-400/80",
+        red: "border-red-400/45 bg-[#07423d] text-white hover:border-red-400/80",
+      }[tone];
+
+  const badgeStyle = active
+    ? {
+        neutral: "bg-cu-teal-tint text-cu-teal-ink",
+        amber: "bg-cu-emerald text-amber-300",
+        green: "bg-white text-emerald-800",
+        red: "bg-white text-red-700",
+      }[tone]
+    : {
+        neutral: "bg-white/15 text-white",
+        amber: "bg-amber-400 text-cu-emerald-ink",
+        green: "bg-emerald-600 text-white",
+        red: "bg-red-500 text-white",
+      }[tone];
+
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition ${pillStyle}`}
+    >
+      {icon}
+      {label}
+      {count !== undefined && (
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${badgeStyle}`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
+
+/** Collapsible telemetry / audit bar directly under the EmeraldBand. */
+export function TelemetryBar({
+  title,
+  badge = "CU-OS",
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  badge?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="-mx-4 -mt-4 border-y border-cu-border bg-cu-surface px-4 py-2.5 sm:mx-0 sm:mt-0 sm:rounded-2xl sm:border sm:px-5">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 py-1 text-left"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <TelemetryIcon />
+          <span className="truncate text-sm font-bold text-cu-ink">{title}</span>
+          <span className="shrink-0 rounded-md bg-cu-teal-tint px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-cu-teal-ink">
+            {badge}
+          </span>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-cu-body-text">
+          {open ? "Collapse" : "Expand"}
+          <ChevronIcon open={open} />
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-3 border-t border-cu-line-soft pb-1 pt-3.5">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Compact metric cell inside TelemetryBar or summary panels. */
+export function TelemetryStat({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: number | string;
+  hint?: string;
+  tone?: "amber" | "teal" | "red" | "green";
+}) {
+  const valueTone = {
+    amber: "text-cu-amber",
+    teal: "text-cu-teal-ink",
+    red: "text-cu-red",
+    green: "text-cu-green",
+  }[tone ?? "teal"];
+
+  return (
+    <div className="rounded-xl border border-cu-border bg-cu-panel p-3.5">
+      <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-cu-body-text">
+        {label}
+      </p>
+      <p
+        className={`mt-1.5 text-[1.75rem] font-bold leading-none tracking-[-0.015em] tabular-nums ${
+          tone ? valueTone : "text-cu-ink"
+        }`}
+      >
+        {value}
+      </p>
+      {hint && <p className="mt-1 text-[11px] text-cu-body-text">{hint}</p>}
+    </div>
+  );
+}
+
+/** Section header with green count pill and optional right control. */
+export function RosterHeader({
+  title,
+  countLabel,
+  right,
+}: {
+  title: string;
+  countLabel?: string;
+  right?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <div className="flex items-center gap-2.5">
+        <h1 className="text-xl font-bold tracking-[-0.015em] text-cu-ink sm:text-2xl">
+          {title}
+        </h1>
+        {countLabel && (
+          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold tabular-nums text-emerald-800">
+            {countLabel}
+          </span>
+        )}
+      </div>
+      {right}
     </div>
   );
 }
