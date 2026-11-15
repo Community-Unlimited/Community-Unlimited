@@ -9,19 +9,56 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+DEFAULT_SQLITE_URL = "sqlite:///./cuos.db"
+
+
+def normalize_database_url(url: str) -> str:
+    """Ensure PostgreSQL URLs use the psycopg v3 SQLAlchemy dialect."""
+    cleaned = url.strip()
+    if cleaned.startswith("postgres://"):
+        return "postgresql+psycopg://" + cleaned[len("postgres://") :]
+    if cleaned.startswith("postgresql://"):
+        return "postgresql+psycopg://" + cleaned[len("postgresql://") :]
+    return cleaned
+
+
+def to_libpq_url(url: str) -> str:
+    """Strip SQLAlchemy driver suffixes (+psycopg) for libpq tools like pg_dump."""
+    cleaned = url.strip()
+    if cleaned.startswith("postgresql+psycopg://"):
+        return "postgresql://" + cleaned[len("postgresql+psycopg://") :]
+    if cleaned.startswith("postgres://"):
+        return "postgresql://" + cleaned[len("postgres://") :]
+    return cleaned
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="CU_",
-        env_file=".env",
+        env_file=(".env", ".env.local", "../.env", "../.env.local"),
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
-    database_url: str = "sqlite:///./cuos.db"
+    env: str = "development"
+    database_url: str = DEFAULT_SQLITE_URL
+    direct_database_url: str = ""
+    neon_database_url_pooled: str = Field(
+        default="",
+        validation_alias=AliasChoices("CU_DATABASE_URL_POOLED", "DATABASE_URL_POOLED"),
+    )
+    neon_database_url_unpooled: str = Field(
+        default="",
+        validation_alias=AliasChoices("CU_DATABASE_URL_UNPOOLED", "DATABASE_URL_UNPOOLED"),
+    )
+    neon_database_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("DATABASE_URL",),
+    )
 
     # Directory holding the compiled SPA. When set and present, the API serves
     # the frontend from the same origin — one service, no CORS. Unset locally,
@@ -55,8 +92,8 @@ class Settings(BaseSettings):
 
     # --- Oracle Cloud WhatsApp Bridge ---------------------------------------
     oracle_whatsapp_url: str = "https://whatsapp.rejey-services.tech"
-    oracle_whatsapp_token: str = "78651582e6fd5be5ed908fae6538cec500a2938abf22682a2fa2c73f01061143"
-    oracle_whatsapp_user_id: str = "4589accd-0f9d-46a6-96c0-c0d2044a77e6"
+    oracle_whatsapp_token: str = ""
+    oracle_whatsapp_user_id: str = ""
 
     # --- Open WhatsApp (WAHA / Baileys) -------------------------------------
     openwa_url: str = "http://localhost:3000"
@@ -126,9 +163,61 @@ class Settings(BaseSettings):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
 
+    @model_validator(mode="after")
+    def _validate_production_settings(self) -> Settings:
+        if not self.is_production:
+            return self
+        if not self.jwt_secret or self.jwt_secret == "dev-only-change-me":
+            raise ValueError(
+                "CU_JWT_SECRET must be set to a strong non-default secret when CU_ENV=production"
+            )
+        if self.whatsapp_provider == "fake":
+            raise ValueError(
+                "CU_WHATSAPP_PROVIDER='fake' is not permitted when CU_ENV=production"
+            )
+        if "*" in self.cors_origins:
+            raise ValueError(
+                "Wildcard '*' in CU_CORS_ORIGINS is not permitted when CU_ENV=production"
+            )
+        return self
+
+    @property
+    def is_production(self) -> bool:
+        return self.env.strip().lower() == "production"
+
+    @property
+    def effective_database_url(self) -> str:
+        """Runtime database URL (prefers Neon pooled URL for app traffic)."""
+        if self.database_url and self.database_url != DEFAULT_SQLITE_URL:
+            return normalize_database_url(self.database_url)
+        if self.neon_database_url_pooled:
+            return normalize_database_url(self.neon_database_url_pooled)
+        if self.neon_database_url:
+            return normalize_database_url(self.neon_database_url)
+        if self.neon_database_url_unpooled:
+            return normalize_database_url(self.neon_database_url_unpooled)
+        return normalize_database_url(self.database_url or DEFAULT_SQLITE_URL)
+
+    @property
+    def effective_direct_database_url(self) -> str:
+        """Direct (non-pooled) database URL for Alembic DDL and pg_dump."""
+        if self.direct_database_url:
+            return normalize_database_url(self.direct_database_url)
+        if self.database_url and self.database_url != DEFAULT_SQLITE_URL:
+            if (
+                self.database_url.startswith("sqlite")
+                or "-pooler." not in self.database_url
+            ):
+                return normalize_database_url(self.database_url)
+        if self.neon_database_url_unpooled:
+            return normalize_database_url(self.neon_database_url_unpooled)
+        if self.neon_database_url and "-pooler." not in self.neon_database_url:
+            return normalize_database_url(self.neon_database_url)
+        return self.effective_database_url
+
     @property
     def is_sqlite(self) -> bool:
-        return self.database_url.startswith("sqlite")
+        return self.effective_database_url.startswith("sqlite")
 
 
 @lru_cache

@@ -21,6 +21,7 @@ import sys
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import SessionLocal
 from app.models import (
     Asset,
@@ -213,14 +214,41 @@ def main() -> int:
         "--no-calendar", action="store_true", help="skip the 72 training slots"
     )
     parser.add_argument("--admin-email", default="admin@communityunlimited.sg")
-    parser.add_argument("--admin-password", default="cuos-admin")
+    parser.add_argument("--admin-password", default=None)
+    parser.add_argument(
+        "--skip-admin",
+        action="store_true",
+        help="seed reference data without creating an admin user",
+    )
     args = parser.parse_args()
+
+    is_production = get_settings().is_production
+    admin_password = args.admin_password
+    if args.skip_admin:
+        should_seed_admin = False
+        admin_summary = "skipped (--skip-admin)"
+    elif admin_password is None:
+        if is_production:
+            should_seed_admin = False
+            admin_summary = "skipped (CU_ENV=production requires --admin-password)"
+        else:
+            should_seed_admin = True
+            admin_password = "cuos-admin"
+            admin_summary = args.admin_email
+    elif is_production and admin_password == "cuos-admin":
+        raise SystemExit(
+            "Refusing to seed the default 'cuos-admin' password when CU_ENV=production."
+        )
+    else:
+        should_seed_admin = True
+        admin_summary = args.admin_email
 
     db = SessionLocal()
     try:
         seed_pathway(db)
         assets = seed_assets(db)
-        seed_admin(db, args.admin_email.lower(), args.admin_password)
+        if should_seed_admin and admin_password is not None:
+            seed_admin(db, args.admin_email.lower(), admin_password)
         slots = 0 if args.no_calendar else seed_calendar(db)
         demo = seed_demo_people(db) if args.demo else 0
         db.commit()
@@ -232,7 +260,7 @@ def main() -> int:
     print(f"  assets         {assets} placeholder site(s) created (target {TARGET_ASSETS})")
     print(f"  training slots {slots} draft event(s) from the locked calendar")
     print(f"  demo people    {demo}")
-    print(f"  admin          {args.admin_email}")
+    print(f"  admin          {admin_summary}")
     print()
     print("TO CONFIRM - candidate sites from the March 2026 mapping, for a human")
     print("to assign to the register (2.2 - these are candidates, not the 17):")

@@ -19,7 +19,12 @@ def _build_engine() -> Engine:
         # FastAPI hands requests to a threadpool, so the connection may be
         # touched from a thread other than the one that created it.
         kwargs["connect_args"] = {"check_same_thread": False}
-    return create_engine(settings.database_url, **kwargs)
+    else:
+        # Neon PgBouncer (-pooler) + scale-to-zero friendly pooling.
+        kwargs["pool_size"] = 5
+        kwargs["max_overflow"] = 10
+        kwargs["pool_recycle"] = 300
+    return create_engine(settings.effective_database_url, **kwargs)
 
 
 engine = _build_engine()

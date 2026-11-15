@@ -4,11 +4,12 @@
 # which serves it from the same origin as /api. That means no CORS, no
 # VITE_API_BASE_URL, one URL, and one service to pay for.
 #
-# The persistent SQLite database lives on a 1GB mounted volume at /data.
+# Database state lives in Neon PostgreSQL (pooled endpoint for runtime traffic,
+# direct endpoint for Alembic DDL and logical backups), enabling zero-downtime
+# deploys without a persistent Render disk.
+#
 # The WhatsApp engine connects to the persistent external Oracle Cloud bridge
 # (https://whatsapp.rejey-services.tech), so NO extra container/cost is needed.
-#
-# Total cost: Starter plan ($7/mo) + 1GB persistent disk ($0.25/mo) = ~$7.25 / month.
 
 services:
   - type: web
@@ -20,13 +21,15 @@ services:
     plan: starter
     healthCheckPath: /api/health
     numInstances: 1
-    disk:
-      name: cuos-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
+      - key: CU_ENV
+        value: production
+      # Neon pooled (-pooler) connection string for FastAPI runtime queries
       - key: CU_DATABASE_URL
-        value: sqlite:////data/cuos.db
+        sync: false
+      # Neon direct (non-pooled) connection string for Alembic DDL migrations
+      - key: CU_DIRECT_DATABASE_URL
+        sync: false
       - key: CU_STATIC_DIR
         value: /app/static
       # WhatsApp Provider defaults to Oracle Cloud persistent bridge
@@ -37,6 +40,8 @@ services:
       - key: CU_ORACLE_WHATSAPP_TOKEN
         sync: false
       - key: CU_ORACLE_WHATSAPP_USER_ID
+        sync: false
+      - key: CU_OPENWA_WEBHOOK_SECRET
         sync: false
       - key: CU_JWT_SECRET
         generateValue: true
@@ -74,3 +79,27 @@ services:
         sync: false
       - key: CU_TWILIO_CONTENT_SID_EVENT_INVITE
         sync: false
+
+  # Deferred weekly pg_dump cron job (enable once S3/R2 storage creds are ready):
+  # - type: cron
+  #   name: cu-os-weekly-backup
+  #   runtime: docker
+  #   dockerfilePath: ./Dockerfile
+  #   dockerContext: .
+  #   region: singapore
+  #   plan: starter
+  #   schedule: "0 18 * * 0"  # Monday 02:00 SGT
+  #   dockerCommand: python scripts/backup_db.py
+  #   envVars:
+  #     - key: CU_DIRECT_DATABASE_URL
+  #       sync: false
+  #     - key: CU_BACKUP_S3_BUCKET
+  #       sync: false
+  #     - key: CU_BACKUP_S3_ENDPOINT
+  #       sync: false
+  #     - key: CU_BACKUP_S3_PREFIX
+  #       value: cuos-backups/
+  #     - key: AWS_ACCESS_KEY_ID
+  #       sync: false
+  #     - key: AWS_SECRET_ACCESS_KEY
+  #       sync: false

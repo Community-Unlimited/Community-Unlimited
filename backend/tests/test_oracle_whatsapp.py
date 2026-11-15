@@ -94,6 +94,12 @@ def test_oracle_client_send(monkeypatch):
 
 
 def test_admin_api_endpoints(client: TestClient, auth: dict, monkeypatch):
+    from app.config import get_settings
+
+    settings = get_settings()
+    monkeypatch.setattr(settings, "oracle_whatsapp_user_id", "user_123", raising=False)
+    monkeypatch.setattr(settings, "oracle_whatsapp_token", "tok_123", raising=False)
+
     def fake_get(url, headers, timeout):
         return httpx.Response(
             200,

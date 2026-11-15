@@ -80,6 +80,11 @@ def verify_webhook(request: Request) -> Response:
 @router.post("/webhook")
 async def receive_webhook(request: Request, db: DbSession) -> dict[str, object]:
     settings = get_settings()
+    if settings.is_production and not settings.whatsapp_app_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WhatsApp webhook secret is not configured",
+        )
 
     raw = await request.body()
 
@@ -252,6 +257,11 @@ async def receive_open_whatsapp_webhook(
     request: Request, db: DbSession
 ) -> dict[str, object]:
     settings = get_settings()
+    if settings.is_production and not settings.openwa_webhook_secret:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="OpenWA webhook secret is not configured",
+        )
 
     if settings.openwa_webhook_secret:
         provided = (

@@ -95,3 +95,7 @@ ehthumbs.db
 *.log
 *.bak
 *.tmp
+.neon
+backups/
+*.dump
+

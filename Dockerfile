@@ -29,22 +29,26 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# pg_dump is included so weekly logical backup runs share the same image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 # Installed from pyproject.toml rather than a duplicated list, which would
 # silently drift and break production on an ImportError.
 COPY backend/pyproject.toml backend/alembic.ini backend/seed.py ./
 COPY backend/alembic ./alembic
 COPY backend/app ./app
+COPY backend/scripts ./scripts
 RUN pip install --no-cache-dir .
 
 # The compiled SPA. app.main mounts this when present and falls back to
 # index.html for client-side routes.
 COPY --from=frontend /fe/dist ./static
 
-# SQLite lives on a mounted volume. Without one the database is recreated empty
-# on every deploy — fine for a demo, not for real registrations.
-ENV CU_DATABASE_URL=sqlite:////data/cuos.db \
-    CU_STATIC_DIR=/app/static
-RUN mkdir -p /data
+# Runtime database URL comes from CU_DATABASE_URL (Neon PostgreSQL in
+# production, or sqlite:///./cuos.db if unset locally).
+ENV CU_STATIC_DIR=/app/static
 
 COPY backend/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

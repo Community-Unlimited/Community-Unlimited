@@ -16,7 +16,7 @@ from logging.config import fileConfig
 from typing import Any
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
 from app.config import get_settings
 from app.models import Base  # noqa: F401  (registers every table)
@@ -26,11 +26,14 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Only fall back to the environment when the caller has not supplied a URL.
-# The test suite injects its own; overwriting it silently runs migrations
-# against the developer's real database.
-if not config.get_main_option("sqlalchemy.url", None):
-    config.set_main_option("sqlalchemy.url", get_settings().database_url)
+
+def _resolve_database_url() -> str:
+    """Respect caller-injected URLs; otherwise use Neon's direct endpoint."""
+    configured = config.get_main_option("sqlalchemy.url", None)
+    if configured:
+        return configured
+    return get_settings().effective_direct_database_url
+
 
 target_metadata = Base.metadata
 
@@ -45,7 +48,7 @@ def render_item(type_: str, obj: Any, autogen_context: Any) -> str | bool:
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=config.get_main_option("sqlalchemy.url"),
+        url=_resolve_database_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -61,9 +64,10 @@ def run_migrations_online() -> None:
     connectable = config.attributes.get("connection", None)
 
     if connectable is None:
-        connectable = engine_from_config(
-            config.get_section(config.config_ini_section, {}),
-            prefix="sqlalchemy.",
+        # Pass the URL directly rather than via ConfigParser so special
+        # characters (such as '%') in DB passwords never trip interpolation.
+        connectable = create_engine(
+            _resolve_database_url(),
             poolclass=pool.NullPool,
         )
         with connectable.connect() as connection:
