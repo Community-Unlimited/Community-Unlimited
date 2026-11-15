@@ -6,9 +6,10 @@ set -e
 echo "[entrypoint] running migrations"
 alembic upgrade head
 
-# Seed reference data once. seed.py is idempotent — it upserts CB1-CB7, the
-# locked training calendar and the 17 asset placeholders, so re-running it on
-# every boot is a no-op after the first. Demo people are NOT seeded (no --demo).
+# Seed reference data once. seed.py is idempotent — it upserts CB1-CB7 and the
+# 17 asset placeholders, so re-running it on every boot is a no-op after the
+# first. Draft training calendar slots are skipped unless CU_SEED_CALENDAR=1,
+# and demo people are NOT seeded (no --demo).
 #
 # The admin credentials come from the environment. seed.py's defaults are
 # fine locally but `cuos-admin` must never reach a public URL, so a deployment
@@ -16,6 +17,9 @@ alembic upgrade head
 if [ "${CU_SEED_ON_BOOT:-1}" = "1" ]; then
   echo "[entrypoint] seeding reference data"
   set --
+  if [ "${CU_SEED_CALENDAR:-0}" != "1" ]; then
+    set -- "$@" --no-calendar
+  fi
   if [ -n "${CU_ADMIN_EMAIL:-}" ]; then
     set -- "$@" --admin-email "$CU_ADMIN_EMAIL"
   fi
